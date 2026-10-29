@@ -1,0 +1,2604 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AutiPlay — Aventuras do Dia a Dia</title>
+  <style>
+    :root {
+      --bg-color: #1a2228;
+      --card-bg: #ffffff;
+      --card-text: #1e293b;
+      --primary: #3b82f6;
+      --border-color: #94a3b8;
+      --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      --dialog-font-size: 1rem;
+      --dialog-title-size: 0.92rem;
+    }
+
+    body.theme-calm {
+      --bg-color: #cfd8dc;
+      filter: saturate(0.68) brightness(0.96);
+    }
+
+    body.theme-high-contrast {
+      --bg-color: #000000;
+      --card-bg: #000000;
+      --card-text: #ffff00;
+      --primary: #00ffcc;
+      --border-color: #ffffff;
+      filter: contrast(1.3);
+    }
+
+    body.font-large {
+      --dialog-font-size: 1.18rem;
+      --dialog-title-size: 1.05rem;
+    }
+
+    * { box-sizing: border-box; user-select: none; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-color);
+      font-family: var(--font-family);
+      color: var(--card-text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 6px;
+      overflow-x: hidden;
+    }
+
+    header {
+      width: 100%;
+      max-width: 720px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card-bg);
+      padding: 8px 16px;
+      border-radius: 12px;
+      margin-bottom: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      border: 2px solid var(--border-color);
+    }
+
+    h1 { font-size: 1.15rem; font-weight: 700; color: #0f172a; }
+    .header-btns { display: flex; gap: 6px; }
+
+    button.btn-ctrl {
+      background: var(--primary);
+      color: white;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    button.btn-ctrl:hover { opacity: 0.92; }
+
+    #guide-banner {
+      width: 100%;
+      max-width: 720px;
+      background: #eff6ff;
+      border: 2px solid #93c5fd;
+      border-radius: 10px;
+      padding: 7px 12px;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .guide-text {
+      font-size: 0.88rem;
+      color: #1e40af;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .guide-voice-btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 4px 9px;
+      font-size: 0.78rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #game-container {
+      position: relative;
+      width: 100%;
+      max-width: 720px;
+      aspect-ratio: 4 / 3;
+      background: #3f7c32;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 3px solid var(--border-color);
+      box-shadow: 0 12px 24px -4px rgba(0,0,0,0.4);
+    }
+
+    #game-container:fullscreen {
+      max-width: none;
+      width: 100vw;
+      height: 100vh;
+      border-radius: 0;
+      border: none;
+    }
+
+    #game-container:-webkit-full-screen {
+      max-width: none;
+      width: 100vw;
+      height: 100vh;
+      border-radius: 0;
+      border: none;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+      display: block;
+    }
+
+    #save-indicator {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(15, 23, 42, 0.85);
+      color: #38bdf8;
+      border: 1.5px solid #0284c7;
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      opacity: 0;
+      transition: opacity 0.35s ease;
+      pointer-events: none;
+      z-index: 50;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    #save-indicator.visible {
+      opacity: 1;
+    }
+
+    #accessibility-modal, #sensory-modal, #visual-routine-modal, #neighborhood-map-modal {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(3px);
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      z-index: 60;
+    }
+
+    .modal-content {
+      background: var(--card-bg);
+      color: var(--card-text);
+      padding: 20px;
+      border-radius: 14px;
+      max-width: 480px;
+      width: 100%;
+      border: 2px solid var(--border-color);
+    }
+
+    .modal-content h2 { margin-bottom: 12px; font-size: 1.25rem; }
+    .modal-option {
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.92rem;
+    }
+
+    /* TABS DE SELEÇÃO DE MISSÃO NO ROTEIRO */
+    .mission-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+
+    .mission-tab-btn {
+      background: #f1f5f9;
+      border: 1.5px solid var(--border-color);
+      border-radius: 6px;
+      padding: 6px 3px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .mission-tab-btn.active {
+      background: #eff6ff;
+      border-color: #3b82f6;
+      color: #1d4ed8;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+
+    .routine-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 10px 0;
+      max-height: 230px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .routine-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 2px solid var(--border-color);
+      background: #f8fafc;
+      transition: all 0.2s ease;
+    }
+
+    .routine-item.current {
+      background: #eff6ff;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+    }
+
+    .routine-item.completed {
+      background: #f0fdf4;
+      border-color: #86efac;
+      opacity: 0.88;
+    }
+
+    .routine-icon-box {
+      font-size: 1.6rem;
+      min-width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .routine-details {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+    }
+
+    .routine-step-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .routine-step-desc {
+      font-size: 0.78rem;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    .routine-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 7px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    .badge-done { background: #dcfce7; color: #166534; }
+    .badge-current { background: #dbeafe; color: #1d4ed8; }
+    .badge-next { background: #f1f5f9; color: #64748b; }
+
+    .map-places-list {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      margin: 12px 0;
+      max-height: 250px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .map-place-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 12px;
+      background: #f8fafc;
+      border: 2px solid var(--border-color);
+      border-radius: 10px;
+      transition: all 0.2s ease;
+    }
+
+    .map-place-card.locked {
+      background: #f1f5f9;
+      opacity: 0.75;
+      border-style: dashed;
+    }
+
+    .map-place-card.active-target {
+      border-color: #3b82f6;
+      background: #eff6ff;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+
+    .map-place-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      text-align: left;
+    }
+
+    .map-place-icon {
+      font-size: 1.5rem;
+      min-width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .map-place-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .map-place-name {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .map-place-desc {
+      font-size: 0.76rem;
+      color: #64748b;
+      margin-top: 1px;
+    }
+
+    .btn-select-target {
+      background: #e0f2fe;
+      color: #0369a1;
+      border: 1.5px solid #38bdf8;
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn-select-target:hover {
+      background: #38bdf8;
+      color: white;
+    }
+
+    select, input[type="checkbox"] {
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+    }
+
+    .breath-box { display: flex; justify-content: center; margin: 16px 0; }
+    .breath-circle {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: #38bdf8;
+      animation: breathAnim 8s infinite ease-in-out;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0f172a;
+      font-weight: bold;
+    }
+    @keyframes breathAnim {
+      0%, 100% { transform: scale(0.7); background: #38bdf8; }
+      50% { transform: scale(1.3); background: #86efac; }
+    }
+
+    #dialog-layer {
+      position: absolute;
+      bottom: 10px; left: 10px; right: 10px;
+      background: var(--card-bg);
+      color: var(--card-text);
+      border: 3px solid var(--border-color);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: none;
+      z-index: 40;
+      max-height: 80%;
+      overflow-y: auto;
+    }
+
+    .dialog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 4px;
+    }
+
+    #dialog-title {
+      font-size: var(--dialog-title-size);
+      font-weight: 700;
+      color: #0284c7;
+      text-transform: uppercase;
+    }
+
+    .dialog-tts-btn {
+      background: #e0f2fe;
+      color: #0369a1;
+      border: 1.5px solid #38bdf8;
+      border-radius: 6px;
+      padding: 4px 9px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    #dialog-text {
+      font-size: var(--dialog-font-size);
+      line-height: 1.45;
+      margin-bottom: 10px;
+    }
+
+    #dialog-choices { display: flex; flex-direction: column; gap: 7px; }
+
+    .choice-card {
+      background: #f8fafc;
+      color: #1e293b;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .choice-card:hover { background: #e0f2fe; border-color: #38bdf8; }
+    .choice-label { font-size: var(--dialog-font-size); font-weight: 600; display: flex; gap: 8px; }
+    .choice-preview { font-size: 0.78rem; color: #64748b; margin-left: 28px; margin-top: 2px; }
+
+    #touch-controls, .instructions-hint {
+      display: none;
+    }
+
+    @media (hover: none) and (pointer: coarse) {
+      #touch-controls {
+        display: flex;
+        width: 100%;
+        max-width: 720px;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 6px;
+        padding: 8px 16px;
+        background: var(--card-bg);
+        border-radius: 12px;
+        border: 2px solid var(--border-color);
+      }
+      .instructions-hint {
+        display: block;
+        font-size: 0.8rem;
+        color: #94a3b8;
+        margin-top: 4px;
+        text-align: center;
+      }
+    }
+
+    .d-pad { display: grid; grid-template-columns: repeat(3, 44px); gap: 4px; }
+    .d-btn {
+      background: #f1f5f9;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      height: 44px;
+      font-size: 1.15rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .action-btn {
+      background: var(--primary);
+      color: white;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 0.95rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body class="theme-default">
+
+  <audio id="background-music" src="MINHA.mp3" loop preload="auto"></audio>
+
+  <header>
+    <div>
+      <h1>AutiPlay</h1>
+      <span style="font-size: 0.8rem; color: #64748b;">Aventuras do Dia a Dia</span>
+    </div>
+    <div class="header-btns">
+      <button class="btn-ctrl" id="btn-neighborhood-map" title="Consultar Mapa do Bairro">🗺️ Mapa</button>
+      <button class="btn-ctrl" id="btn-visual-routine" title="Consultar Roteiro Visual">📋 Roteiro</button>
+      <button class="btn-ctrl" id="btn-fullscreen" title="Jogar em Tela Cheia">⛶ Tela Cheia</button>
+      <button class="btn-ctrl" id="btn-sensory-break">🌸 Pausa</button>
+      <button class="btn-ctrl" id="btn-sound-toggle">🔊 Som</button>
+      <button class="btn-ctrl" id="btn-open-settings">⚙️ Ajustes</button>
+    </div>
+  </header>
+
+  <div id="guide-banner">
+    <div class="guide-text">
+      <span>🎯 Dica Tranquila:</span>
+      <span id="guide-current-step">Explore o bairro! Você pode praticar no Mercado, Farmácia, Praça ou Banco.</span>
+    </div>
+    <button class="guide-voice-btn" id="btn-speak-guide">🗣️ Ler Dica</button>
+  </div>
+
+  <div id="game-container">
+    <canvas id="gameCanvas" width="360" height="270"></canvas>
+
+    <div id="save-indicator">💾 Progresso salvo</div>
+
+    <div id="dialog-layer">
+      <div class="dialog-header">
+        <div id="dialog-title">📍 Local</div>
+        <button class="dialog-tts-btn" id="btn-dialog-speak">🗣️ Repetir Fala</button>
+      </div>
+      <div id="dialog-text">Instrução...</div>
+      <div id="dialog-choices"></div>
+    </div>
+
+    <!-- MODAL DO MAPA DO BAIRRO COM AS 4 MISSÕES DO COTIDIANO -->
+    <div id="neighborhood-map-modal">
+      <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h2>🗺️ Mapa do Bairro</h2>
+          <button class="dialog-tts-btn" id="btn-speak-map">🗣️ Ler Mapa</button>
+        </div>
+        <p style="font-size: 0.86rem; color: #475569;">
+          Escolha uma das atividades do cotidiano para focar no seu ritmo:
+        </p>
+
+        <div class="map-places-list" id="map-places-container"></div>
+
+        <button class="btn-ctrl" style="margin-top: 10px; width: 100%; justify-content: center;" id="btn-close-map">Voltar ao Jogo</button>
+      </div>
+    </div>
+
+    <!-- MODAL DO PASSO A PASSO VISUAL COM AS 4 MISSÕES -->
+    <div id="visual-routine-modal">
+      <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h2>📋 Passo a Passo Visual</h2>
+          <button class="dialog-tts-btn" id="btn-speak-routine">🗣️ Ler Roteiro</button>
+        </div>
+        
+        <!-- Seleção de qual missão visualizar -->
+        <div class="mission-tabs" id="routine-mission-tabs">
+          <button class="mission-tab-btn" onclick="switchRoutineView('market')">🛒 Mercado</button>
+          <button class="mission-tab-btn" onclick="switchRoutineView('pharmacy')">💊 Farmácia</button>
+          <button class="mission-tab-btn" onclick="switchRoutineView('park')">🌳 Praça</button>
+          <button class="mission-tab-btn" onclick="switchRoutineView('bank')">🏦 Banco</button>
+        </div>
+
+        <p style="font-size: 0.86rem; color: #475569;" id="routine-modal-subtitle">
+          Veja com calma as etapas da sua missão no seu ritmo:
+        </p>
+
+        <div class="routine-list" id="routine-list-container"></div>
+
+        <button class="btn-ctrl" style="margin-top: 10px; width: 100%; justify-content: center;" id="btn-close-routine">Entendi / Continuar</button>
+      </div>
+    </div>
+
+    <div id="sensory-modal">
+      <div class="modal-content" style="text-align: center;">
+        <h2>🌸 Cantinho do Descanso</h2>
+        <p style="font-size: 0.9rem; color: #475569;">Inspire enquanto o círculo cresce e solte o ar quando diminuir.</p>
+        <div class="breath-box"><div class="breath-circle">Respire</div></div>
+        <button class="btn-ctrl" style="width: 100%; justify-content: center;" id="btn-close-sensory">Voltar ao Jogo</button>
+      </div>
+    </div>
+
+    <div id="accessibility-modal">
+      <div class="modal-content">
+        <h2>⚙️ Conforto e Acessibilidade</h2>
+        <div class="modal-option">
+          <label for="select-theme">🎨 Visual:</label>
+          <select id="select-theme">
+            <option value="theme-default">Gráficos Ricos</option>
+            <option value="theme-calm">Cores Suaves</option>
+            <option value="theme-high-contrast">Alto Contraste</option>
+          </select>
+        </div>
+        <div class="modal-option">
+          <label for="select-font-size">🔤 Texto:</label>
+          <select id="select-font-size">
+            <option value="normal">Normal</option>
+            <option value="large">Grande</option>
+          </select>
+        </div>
+        <div class="modal-option">
+          <label for="chk-auto-tts">🗣️ Leitura por Voz:</label>
+          <input type="checkbox" id="chk-auto-tts" checked>
+        </div>
+        <div class="modal-option">
+          <label for="chk-sound">🔊 Som:</label>
+          <input type="checkbox" id="chk-sound" checked>
+        </div>
+        <button class="btn-ctrl" style="margin-top: 14px; width: 100%; justify-content: center;" id="btn-close-settings">Salvar Ajustes</button>
+        <button class="btn-ctrl" style="margin-top: 8px; width: 100%; justify-content: center; background: #64748b;" id="btn-reset-save">🔄 Reiniciar Aventura do Começo</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="touch-controls">
+    <div class="d-pad">
+      <div></div><button class="d-btn" id="d-up">▲</button><div></div>
+      <button class="d-btn" id="d-left">◀</button><div></div><button class="d-btn" id="d-right">▶</button>
+      <div></div><button class="d-btn" id="d-down">▼</button><div></div>
+    </div>
+    <div class="action-panel">
+      <button class="action-btn" id="btn-interact">💬 Interagir / Escolher</button>
+    </div>
+  </div>
+  <div class="instructions-hint">Toque nas setas para andar e no botão azul para falar</div>
+
+  <script>
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const backgroundMusic = document.getElementById('background-music');
+    backgroundMusic.volume = 0.35;
+
+    function startBackgroundMusic() {
+      if (!soundEnabled) return;
+      backgroundMusic.play().catch(() => {});
+    }
+    window.addEventListener('load', startBackgroundMusic);
+    ['pointerdown', 'keydown', 'touchstart'].forEach((eventName) => {
+      window.addEventListener(eventName, startBackgroundMusic, { once: true });
+    });
+
+    let soundEnabled = true;
+    let autoSpeakDialogs = true;
+    let currentSpeechText = "";
+
+    function speakText(text) {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const clean = text.replace(/[\u{1F300}-\u{1FAFF}]/gu, '').replace(/[•—]/g, ' ').trim();
+      if (!clean) return;
+      const utt = new SpeechSynthesisUtterance(clean);
+      utt.lang = 'pt-BR';
+      utt.rate = 0.90;
+      const voices = window.speechSynthesis.getVoices();
+      const ptVoice = voices.find(v => v.lang.includes('pt-BR') || v.lang.includes('pt'));
+      if (ptVoice) utt.voice = ptVoice;
+      window.speechSynthesis.speak(utt);
+    }
+
+    function playSoftBeep(frequency = 440) {
+      if (!soundEnabled || !audioContext) return;
+      try {
+        if (audioContext.state === 'suspended') audioContext.resume();
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.frequency.setValueAtTime(frequency, audioContext.currentTime);
+        gain.gain.setValueAtTime(0.035, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.08);
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        osc.start();
+        osc.stop(audioContext.currentTime + 0.08);
+      } catch (e) {}
+    }
+
+    const TILE_SIZE = 20;
+    const CANVAS_WIDTH = 360;
+    const CANVAS_HEIGHT = 270;
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let globalTick = 0;
+
+    const TILE = {
+      GRASS: 0, PAVEMENT: 1, HOUSE_WALL: 2, HOUSE_ROOF: 3, MARKET_DOOR: 4,
+      LIBRARY_DOOR: 5, WATER: 6, FOUNTAIN_EDGE: 7, TREE: 8, FLOWER_PATCH: 9,
+      MARKET_FLOOR: 10, SHELF_FRUITS: 11, SHELF_BOXES: 12, MARKET_COUNTER: 13,
+      MARKET_EXIT: 14, LIB_CARPET: 15, LIB_BOOKSHELF: 16,
+      BENCH: 17, LAMP_POST: 18, HEDGE: 19, SIGNPOST: 20,
+      PHARMACY_DOOR: 21, BANK_DOOR: 22, PHARMACY_FLOOR: 23, PHARMACY_SHELF: 24,
+      BANK_FLOOR: 25, BANK_ATM: 26
+    };
+
+    /* MAPA DA CIDADE INTEGRANDO MERCADO, BIBLIOTECA, FARMÁCIA E BANCO */
+    const mapTown = [
+      [8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+      [8,8,0,0,0,8,8,1,1,8,8,0,0,0,8,8,0,0,0,8,8,8],
+      [8,8,0,17,0,18,0,1,1,0,18,0,17,0,8,8,0,9,0,8,8,8],
+      [8,8,0,0,0,19,19,1,1,19,19,0,0,0,8,8,0,0,0,8,8,8],
+      [8,8,0,9,0,0,0,1,1,0,0,0,9,0,8,8,0,18,0,8,8,8],
+      [8,8,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,8,8,8],
+      [8,8,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1,0,8,8,8],
+      [8,8,1,0,8,0,0,1,1,0,20,0,0,8,0,0,0,1,0,8,8,8],
+      [8,8,1,0,3,3,3,1,1,0,3,3,3,3,3,3,3,1,0,8,8,8], // Farmácia integrada à direita
+      [8,8,1,0,2,4,2,1,1,0,2,5,2,2,2,21,2,1,0,8,8,8], // Porta da Farmácia (21)
+      [8,8,1,0,0,1,0,1,1,0,0,1,0,0,0,1,0,1,0,8,8,8],
+      [8,8,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,8,8,8],
+      [8,8,1,0,0,0,0,1,1,0,0,0,0,1,0,9,0,8,0,8,8,8],
+      [8,8,1,0,8,0,0,1,1,0,7,7,7,1,0,0,0,0,0,8,8,8],
+      [8,8,1,3,3,3,0,1,1,0,7,6,7,1,1,1,1,1,0,8,8,8], // Banco Cidadão à esquerda
+      [8,8,1,2,22,2,0,1,1,0,7,6,7,0,0,0,0,1,0,8,8,8], // Porta do Banco (22)
+      [8,8,1,0,1,0,0,1,1,0,7,7,7,0,0,8,0,1,0,8,8,8],
+      [8,8,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,8,8,8],
+      [8,8,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,1,0,8,8],
+      [8,8,0,18,0,1,0,9,0,8,0,0,1,0,9,0,18,0,1,0,8,8],
+      [8,8,0,17,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,8,8],
+      [8,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,8],
+      [8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+      [8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8]
+    ];
+
+    const mapMarket = [
+      [2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2],
+      [2,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,2],
+      [2,10,10,11,11,10,10,12,12,10,13,10,10,10,10,10,10,2],
+      [2,10,10,11,11,10,10,12,12,10,13,10,10,10,10,10,10,2],
+      [2,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,2],
+      [2,10,10,11,11,10,10,12,12,10,10,10,10,10,10,10,10,2],
+      [2,10,10,11,11,10,10,12,12,10,10,10,10,10,10,10,10,2],
+      [2,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,2],
+      [2,10,10,10,10,10,14,14,10,10,10,10,10,10,10,10,10,2],
+      [2,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,2],
+      [2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]
+    ];
+
+    const mapLibrary = [
+      [2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2],
+      [2,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,2],
+      [2,15,15,16,16,15,15,16,16,15,15,15,15,15,15,15,15,2],
+      [2,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,2],
+      [2,15,15,16,16,15,15,16,16,15,15,15,15,15,15,15,15,2],
+      [2,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,2],
+      [2,15,15,15,15,14,14,15,15,15,15,15,15,15,15,15,15,2],
+      [2,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,2],
+      [2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]
+    ];
+
+    /* INTERIOR DA FARMÁCIA BEM-ESTAR */
+    const mapPharmacy = [
+      [2,2,2,2,2,2,2,2,2,2,2,2,2,2],
+      [2,23,23,23,23,23,23,23,23,23,23,23,23,2],
+      [2,23,24,24,23,23,24,24,23,13,23,23,23,2],
+      [2,23,24,24,23,23,24,24,23,13,23,23,23,2],
+      [2,23,23,23,23,23,23,23,23,23,23,23,23,2],
+      [2,23,23,23,23,14,14,23,23,23,23,23,23,2],
+      [2,23,23,23,23,23,23,23,23,23,23,23,23,2],
+      [2,2,2,2,2,2,2,2,2,2,2,2,2,2]
+    ];
+
+    /* INTERIOR DO BANCO CIDADÃO */
+    const mapBank = [
+      [2,2,2,2,2,2,2,2,2,2,2,2,2,2],
+      [2,25,25,25,25,25,25,25,25,25,25,25,25,2],
+      [2,25,26,25,25,25,25,25,25,13,25,25,25,2],
+      [2,25,25,25,17,17,25,25,25,13,25,25,25,2],
+      [2,25,25,25,25,25,25,25,25,25,25,25,25,2],
+      [2,25,25,25,25,14,14,25,25,25,25,25,25,2],
+      [2,25,25,25,25,25,25,25,25,25,25,25,25,2],
+      [2,2,2,2,2,2,2,2,2,2,2,2,2,2]
+    ];
+
+    /* ESTADO DAS 4 MISSÕES DO COTIDIANO */
+    const gameState = {
+      currentScene: 'town',
+      inDialog: false,
+      lastSpawn: { x: 4, y: 10 },
+      player: { x: 7, y: 11, targetX: 7, targetY: 11, facing: 'down', isMoving: false, stepProgress: 0, speed: 0.1 },
+      npcs: {
+        alex: { x: 9, y: 11, name: 'Alex (Vizinho)', role: 'guide', icon: '🧑' },
+        bento: { x: 4, y: 2, name: 'Sr. Bento (Aposentado)', role: 'elder', icon: '👴' },
+        vera: { x: 10, y: 4, name: 'Dona Vera (Caixa)', role: 'cashier', icon: '👩‍💼' },
+        lucas: { x: 5, y: 3, name: 'Lucas (Atendente)', role: 'helper', icon: '🙋‍♂️' },
+        sofia: { x: 4, y: 3, name: 'Sofia (Bibliotecária)', role: 'library', icon: '📖' },
+        clara: { x: 10, y: 3, name: 'Dra. Clara (Farmacêutica)', role: 'pharmacist', icon: '👩‍⚕️' },
+        roberto: { x: 10, y: 3, name: 'Roberto (Bancário)', role: 'banker', icon: '👨‍💼' }
+      },
+      missions: {
+        market: { step: 0, hasBasket: false, foundItem: false, completed: false, hasSeenRoutine: false },
+        pharmacy: { step: 0, requestedAdvice: false, completed: false },
+        park: { step: 0, relaxed: false, completed: false },
+        bank: { step: 0, ticketNumber: 0, seated: false, completed: false }
+      },
+      // Compatibilidade retroativa
+      get marketMission() { return this.missions.market; },
+      visitedPlaces: {
+        town: true,
+        market: false,
+        library: false,
+        pharmacy: false,
+        bank: false,
+        fountain: false,
+        flowerPark: false,
+        zenPark: false
+      },
+      currentSelectedActivity: 'market'
+    };
+
+    function updateGuideText(t) { document.getElementById('guide-current-step').innerText = t; }
+    document.getElementById('btn-speak-guide').onclick = () => speakText("Dica: " + document.getElementById('guide-current-step').innerText);
+
+    /* ==========================================================================
+       SISTEMA DE SALVAMENTO AUTOMÁTICO (LOCALSTORAGE)
+       ========================================================================== */
+    const STORAGE_KEY = 'autiplay_saved_game_v2';
+    let saveIndicatorTimeout = null;
+
+    function showSaveIndicator(msg = '💾 Progresso salvo') {
+      const ind = document.getElementById('save-indicator');
+      if (!ind) return;
+      ind.innerText = msg;
+      ind.classList.add('visible');
+      if (saveIndicatorTimeout) clearTimeout(saveIndicatorTimeout);
+      saveIndicatorTimeout = setTimeout(() => {
+        ind.classList.remove('visible');
+      }, 2000);
+    }
+
+    function saveGameToStorage(showVisualFeedback = true) {
+      try {
+        const p = gameState.player;
+        const saveData = {
+          settings: {
+            theme: document.getElementById('select-theme').value,
+            fontSize: document.getElementById('select-font-size').value,
+            autoTts: document.getElementById('chk-auto-tts').checked,
+            sound: document.getElementById('chk-sound').checked
+          },
+          player: {
+            x: Math.round(p.targetX !== undefined ? p.targetX : p.x),
+            y: Math.round(p.targetY !== undefined ? p.targetY : p.y),
+            facing: p.facing,
+            currentScene: gameState.currentScene,
+            lastSpawn: gameState.lastSpawn
+          },
+          missions: gameState.missions,
+          visitedPlaces: gameState.visitedPlaces,
+          currentSelectedActivity: gameState.currentSelectedActivity,
+          guideText: document.getElementById('guide-current-step').innerText
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
+        if (showVisualFeedback) showSaveIndicator();
+      } catch (e) {}
+    }
+
+    function loadGameFromStorage() {
+      try {
+        let raw = localStorage.getItem(STORAGE_KEY);
+        // Compatibilidade com chave antiga v1
+        if (!raw) raw = localStorage.getItem('autiplay_saved_game_v1');
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (!data) return;
+
+        if (data.settings) {
+          if (data.settings.theme) {
+            document.getElementById('select-theme').value = data.settings.theme;
+            document.body.className = data.settings.theme;
+          }
+          if (data.settings.fontSize) {
+            document.getElementById('select-font-size').value = data.settings.fontSize;
+            document.body.classList.toggle('font-large', data.settings.fontSize === 'large');
+          }
+          if (typeof data.settings.autoTts === 'boolean') {
+            document.getElementById('chk-auto-tts').checked = data.settings.autoTts;
+            autoSpeakDialogs = data.settings.autoTts;
+          }
+          if (typeof data.settings.sound === 'boolean') {
+            document.getElementById('chk-sound').checked = data.settings.sound;
+            soundEnabled = data.settings.sound;
+            backgroundMusic.muted = !soundEnabled;
+            document.getElementById('btn-sound-toggle').innerText = soundEnabled ? '🔊 Som' : '🔇 Silêncio';
+          }
+        }
+
+        if (data.player) {
+          gameState.currentScene = data.player.currentScene || 'town';
+          gameState.player.x = data.player.x;
+          gameState.player.y = data.player.y;
+          gameState.player.targetX = data.player.x;
+          gameState.player.targetY = data.player.y;
+          gameState.player.facing = data.player.facing || 'down';
+          if (data.player.lastSpawn) gameState.lastSpawn = data.player.lastSpawn;
+
+          if (isSolid(gameState.player.x, gameState.player.y)) {
+            gameState.currentScene = 'town';
+            gameState.player.x = 7;
+            gameState.player.y = 11;
+            gameState.player.targetX = 7;
+            gameState.player.targetY = 11;
+          }
+        }
+
+        if (data.missions) {
+          Object.assign(gameState.missions, data.missions);
+        } else if (data.marketMission) {
+          Object.assign(gameState.missions.market, data.marketMission);
+        }
+
+        if (data.visitedPlaces) Object.assign(gameState.visitedPlaces, data.visitedPlaces);
+        if (data.currentSelectedActivity) gameState.currentSelectedActivity = data.currentSelectedActivity;
+        if (data.guideText) updateGuideText(data.guideText);
+
+        showSaveIndicator('💾 Progresso recuperado!');
+      } catch (e) {}
+    }
+
+    function resetGameProgress() {
+      if (confirm('Deseja recomeçar a aventura do início? Seu progresso atual será reiniciado com tranquilidade.')) {
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem('autiplay_saved_game_v1');
+        } catch (e) {}
+        location.reload();
+      }
+    }
+
+    document.getElementById('btn-reset-save').onclick = resetGameProgress;
+    window.addEventListener('beforeunload', () => saveGameToStorage(false));
+
+    /* ==========================================================================
+       MAPA DO BAIRRO E AS 4 MISSÕES DO COTIDIANO
+       ========================================================================== */
+    const neighborhoodPlaces = [
+      {
+        id: 'market',
+        icon: '🛒',
+        name: 'Mercado do Bairro',
+        goal: 'Missão Cotidiana: Pegar a cesta, encontrar produtos e pagar no caixa.',
+        unlocked: true,
+        guideHint: 'Vá até o Mercado à esquerda da cidade para praticar compras com autonomia.'
+      },
+      {
+        id: 'pharmacy',
+        icon: '💊',
+        name: 'Farmácia Bem-Estar',
+        goal: 'Missão Cotidiana: Entrar e pedir orientação calma a um atendente.',
+        unlocked: true,
+        guideHint: 'Visite a Farmácia Bem-Estar (porta verde) para conversar com a Dra. Clara.'
+      },
+      {
+        id: 'park',
+        icon: '🌳',
+        name: 'Praça das Flores',
+        goal: 'Missão Cotidiana: Encontrar um banco tranquilo e praticar autorregulação.',
+        unlocked: true,
+        guideHint: 'Siga a rua para o alto até a Praça das Flores e sente-se para respirar.'
+      },
+      {
+        id: 'bank',
+        icon: '🏦',
+        name: 'Banco Cidadão',
+        goal: 'Missão Cotidiana: Retirar senha, aguardar chamado e atendimento simulado.',
+        unlocked: true,
+        guideHint: 'Entre no Banco Cidadão (porta azul e dourada) para aprender a sequência de atendimento.'
+      },
+      {
+        id: 'library',
+        icon: '📖',
+        name: 'Biblioteca Silenciosa',
+        goal: 'Visita: Conhecer a bibliotecária Sofia e desfrutar do silêncio.',
+        unlocked: true,
+        guideHint: 'Entre na Biblioteca à direita para descansar em um ambiente silencioso.'
+      },
+      {
+        id: 'fountain',
+        icon: '⛲',
+        name: 'Chafariz Central',
+        goal: 'Passeio: Ouvir o som relaxante da água e falar com Alex.',
+        unlocked: true,
+        guideHint: 'Aproxime-se do Chafariz Central ao sul para relaxar com o som da água.'
+      },
+      {
+        id: 'zenPark',
+        icon: '✨',
+        name: 'Recanto Zen das Flores',
+        goal: 'Desbloqueável: Espaço especial de paz desbloqueado após concluir missões.',
+        unlocked: false,
+        guideHint: 'Aproveite o Recanto Zen das Flores no topo da cidade para respirar em paz!'
+      }
+    ];
+
+    function isPlaceUnlocked(p) {
+      if (p.id === 'zenPark') {
+        return gameState.missions.market.completed || gameState.missions.pharmacy.completed || gameState.missions.bank.completed;
+      }
+      return p.unlocked;
+    }
+
+    function renderNeighborhoodMap() {
+      const container = document.getElementById('map-places-container');
+      container.innerHTML = '';
+
+      neighborhoodPlaces.forEach(place => {
+        const unlocked = isPlaceUnlocked(place);
+        const isCurrentTarget = gameState.currentSelectedActivity === place.id;
+        
+        let isDone = false;
+        if (place.id === 'market') isDone = gameState.missions.market.completed;
+        else if (place.id === 'pharmacy') isDone = gameState.missions.pharmacy.completed;
+        else if (place.id === 'park') isDone = gameState.missions.park.completed;
+        else if (place.id === 'bank') isDone = gameState.missions.bank.completed;
+        else isDone = gameState.visitedPlaces[place.id] || false;
+
+        const card = document.createElement('div');
+        let cardClass = 'map-place-card';
+        if (!unlocked) cardClass += ' locked';
+        if (isCurrentTarget) cardClass += ' active-target';
+        card.className = cardClass;
+
+        let visitBadge = isDone ? '<span class="routine-badge badge-done">Concluída ✅</span>' : '<span class="routine-badge badge-next">Pendente ⏳</span>';
+        if (!unlocked) {
+          visitBadge = '<span class="routine-badge badge-next">🔒 Bloqueado</span>';
+        }
+
+        const actionBtn = unlocked ? `
+          <button class="btn-select-target" onclick="selectNeighborhoodActivity('${place.id}')">
+            ${isCurrentTarget ? '🎯 Em Foco' : '🎯 Focar'}
+          </button>
+        ` : `<span style="font-size: 0.72rem; color: #94a3b8;">Complete missões</span>`;
+
+        card.innerHTML = `
+          <div class="map-place-left">
+            <div class="map-place-icon">${unlocked ? place.icon : '🔒'}</div>
+            <div class="map-place-info">
+              <span class="map-place-name">
+                ${place.name} ${visitBadge}
+              </span>
+              <span class="map-place-desc">
+                ${unlocked ? place.goal : 'Conclua compras no Mercado ou explore o bairro para desbloquear.'}
+              </span>
+            </div>
+          </div>
+          <div>${actionBtn}</div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function selectNeighborhoodActivity(placeId) {
+      const place = neighborhoodPlaces.find(p => p.id === placeId);
+      if (!place) return;
+      gameState.currentSelectedActivity = placeId;
+      updateGuideText(place.guideHint);
+      playSoftBeep(587);
+      saveGameToStorage();
+      closeNeighborhoodMap();
+      showDialog(`🗺️ Atividade Selecionada: ${place.name}`, `Seu objetivo agora é: "${place.goal}". Siga no seu próprio ritmo!`);
+    }
+
+    function openNeighborhoodMap() {
+      renderNeighborhoodMap();
+      document.getElementById('neighborhood-map-modal').style.display = 'flex';
+      playSoftBeep(523);
+      if (autoSpeakDialogs) {
+        speakMapSummary();
+      }
+    }
+
+    function closeNeighborhoodMap() {
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      document.getElementById('neighborhood-map-modal').style.display = 'none';
+      playSoftBeep(440);
+    }
+
+    function speakMapSummary() {
+      let text = "Mapa do Bairro e Missões do Cotidiano. ";
+      neighborhoodPlaces.forEach(p => {
+        const unlocked = isPlaceUnlocked(p);
+        if (unlocked) {
+          text += `${p.name}. Objetivo: ${p.goal}. `;
+        } else {
+          text += `${p.name}, atualmente bloqueado. `;
+        }
+      });
+      speakText(text);
+    }
+
+    document.getElementById('btn-neighborhood-map').onclick = openNeighborhoodMap;
+    document.getElementById('btn-close-map').onclick = closeNeighborhoodMap;
+    document.getElementById('btn-speak-map').onclick = speakMapSummary;
+
+    /* ==========================================================================
+       ROTEIROS VISUAIS PARA TODAS AS MISSÕES DO COTIDIANO
+       ========================================================================== */
+    const allRoutines = {
+      market: {
+        title: "Mercado: Encontrar produtos e pagar",
+        steps: [
+          { id: 0, icon: "🧺", title: "Passo 1: Cestinha", desc: "Pegue a cestinha na entrada ou observe o espaço com tranquilidade." },
+          { id: 1, icon: "🍎", title: "Passo 2: Escolher Frutas", desc: "Caminhe até as prateleiras de frutas e escolha as maçãs no seu ritmo." },
+          { id: 2, icon: "👩‍💼", title: "Passo 3: Caixa e Pagamento", desc: "Vá até o balcão da Dona Vera e pague com aproximação, ecobag ou gentileza." },
+          { id: 3, icon: "🌳", title: "Passo 4: Conclusão", desc: "Saia pelo tapete azul e aproveite a cidade com autonomia." }
+        ]
+      },
+      pharmacy: {
+        title: "Farmácia: Pedir orientação a um atendente",
+        steps: [
+          { id: 0, icon: "🚪", title: "Passo 1: Entrada Tranquila", desc: "Entre na Farmácia Bem-Estar pela porta verde e observe o ambiente iluminado." },
+          { id: 1, icon: "👩‍⚕️", title: "Passo 2: Ir ao Balcão", desc: "Aproxime-se da Dra. Clara no balcão de atendimento." },
+          { id: 2, icon: "💬", title: "Passo 3: Pedir Orientação", desc: "Escolha como pedir ajuda: verbalmente, mostrando o celular ou tirando dúvidas." },
+          { id: 3, icon: "✨", title: "Passo 4: Orientação Recebida", desc: "Agradeça com calma e conclua o aprendizado de pedir auxílio." }
+        ]
+      },
+      park: {
+        title: "Praça: Encontrar um local tranquilo",
+        steps: [
+          { id: 0, icon: "🚶", title: "Passo 1: Caminhar até a Praça", desc: "Suba a rua arborizada até o topo da cidade." },
+          { id: 1, icon: "🪑", title: "Passo 2: Escolher um Banco", desc: "Aproxime-se de um dos bancos confortáveis de madeira perto das flores." },
+          { id: 2, icon: "🌸", title: "Passo 3: Momento de Calma", desc: "Sente-se, respire suavemente e aprecie a calma ao lado do Sr. Bento." }
+        ]
+      },
+      bank: {
+        title: "Banco: Sequência de atendimento simulado",
+        steps: [
+          { id: 0, icon: "🏦", title: "Passo 1: Entrar no Banco", desc: "Entre pela porta azul e dourada no ambiente climatizado e organizado." },
+          { id: 1, icon: "🎟️", title: "Passo 2: Retirar a Senha", desc: "Toque no totem interativo na entrada para retirar sua senha de atendimento." },
+          { id: 2, icon: "🪑", title: "Passo 3: Aguardar na Poltrona", desc: "Sente-se nas cadeiras de espera com calma até ser chamado." },
+          { id: 3, icon: "👨‍💼", title: "Passo 4: Atendimento no Guichê", desc: "Vá ao balcão do Roberto para simular uma dúvida ou transação tranquila." }
+        ]
+      }
+    };
+
+    let currentRoutineView = 'market';
+    let pendingRoutineFollowUp = null;
+
+    function switchRoutineView(missionKey) {
+      currentRoutineView = missionKey;
+      renderVisualRoutine();
+    }
+
+    function renderVisualRoutine() {
+      // Atualiza botões das tabs
+      const tabs = document.querySelectorAll('.mission-tab-btn');
+      tabs.forEach(btn => {
+        const isThis = btn.getAttribute('onclick').includes(currentRoutineView);
+        btn.classList.toggle('active', isThis);
+      });
+
+      const container = document.getElementById('routine-list-container');
+      container.innerHTML = '';
+
+      const rData = allRoutines[currentRoutineView];
+      const mState = gameState.missions[currentRoutineView];
+      const currentStep = mState.step;
+      const isCompleted = mState.completed;
+
+      document.getElementById('routine-modal-subtitle').innerText = rData.title + ':';
+
+      rData.steps.forEach((st) => {
+        const item = document.createElement('div');
+        let statusBadge = '';
+        let itemClass = 'routine-item';
+
+        if (st.id < currentStep || isCompleted) {
+          itemClass += ' completed';
+          statusBadge = '<span class="routine-badge badge-done">Feito ✅</span>';
+        } else if (st.id === currentStep && !isCompleted) {
+          itemClass += ' current';
+          statusBadge = '<span class="routine-badge badge-current">Agora 🎯</span>';
+        } else {
+          statusBadge = '<span class="routine-badge badge-next">A seguir ⏳</span>';
+        }
+
+        item.className = itemClass;
+        item.innerHTML = `
+          <div class="routine-icon-box">${st.icon}</div>
+          <div class="routine-details">
+            <span class="routine-step-title">${st.title}</span>
+            <span class="routine-step-desc">${st.desc}</span>
+          </div>
+          ${statusBadge}
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function openVisualRoutine(defaultMission = null) {
+      if (defaultMission) currentRoutineView = defaultMission;
+      renderVisualRoutine();
+      document.getElementById('visual-routine-modal').style.display = 'flex';
+      playSoftBeep(523);
+      if (autoSpeakDialogs) speakRoutineText();
+    }
+
+    function closeVisualRoutine() {
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      document.getElementById('visual-routine-modal').style.display = 'none';
+      playSoftBeep(440);
+      if (pendingRoutineFollowUp) {
+        const f = pendingRoutineFollowUp;
+        pendingRoutineFollowUp = null;
+        f();
+      }
+    }
+
+    function speakRoutineText() {
+      const rData = allRoutines[currentRoutineView];
+      let fullText = `Roteiro: ${rData.title}. `;
+      rData.steps.forEach((st, idx) => {
+        fullText += `Etapa ${idx + 1}: ${st.desc} `;
+      });
+      speakText(fullText);
+    }
+
+    document.getElementById('btn-visual-routine').onclick = () => openVisualRoutine(gameState.currentSelectedActivity);
+    document.getElementById('btn-close-routine').onclick = closeVisualRoutine;
+    document.getElementById('btn-speak-routine').onclick = speakRoutineText;
+
+    /* ==========================================================================
+       RENDERIZAÇÃO DE TILES COM NOVOS OBJETOS (FARMÁCIA E BANCO)
+       ========================================================================== */
+    function drawExactTile(tile, x, y) {
+      const px = x * TILE_SIZE, py = y * TILE_SIZE;
+
+      switch(tile) {
+        case TILE.GRASS: {
+          const g = ctx.createLinearGradient(px, py, px, py + TILE_SIZE);
+          g.addColorStop(0, '#5fa84d');
+          g.addColorStop(1, '#4f943f');
+          ctx.fillStyle = g;
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          ctx.fillStyle = '#6fbe5a';
+          ctx.fillRect(px + 3, py + 3, 2, 3);
+          ctx.fillRect(px + 13, py + 11, 2, 3);
+          ctx.fillStyle = '#3f7c32';
+          ctx.fillRect(px + 4, py + 5, 2, 1);
+          break;
+        }
+
+        case TILE.PAVEMENT: {
+          ctx.fillStyle = '#dcd4be';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          ctx.strokeStyle = '#b8ad94';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(px + 0.5, py + 0.5, TILE_SIZE / 2, TILE_SIZE / 2);
+          ctx.strokeRect(px + TILE_SIZE / 2 + 0.5, py + TILE_SIZE / 2 + 0.5, TILE_SIZE / 2, TILE_SIZE / 2);
+          ctx.fillStyle = '#f0e9d6';
+          ctx.fillRect(px + 1, py + 1, (TILE_SIZE / 2) - 2, 1);
+          ctx.fillRect(px + (TILE_SIZE / 2) + 1, py + (TILE_SIZE / 2) + 1, (TILE_SIZE / 2) - 2, 1);
+          ctx.fillStyle = 'rgba(0,0,0,0.06)';
+          ctx.fillRect(px, py + TILE_SIZE - 2, TILE_SIZE, 2);
+          break;
+        }
+
+        case TILE.TREE: {
+          ctx.fillStyle = '#4f943f';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          ctx.fillStyle = 'rgba(15, 30, 20, 0.35)';
+          ctx.beginPath();
+          ctx.ellipse(px + 13, py + 16, 9, 5, -0.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#5c3a21';
+          ctx.fillRect(px + 8, py + 9, 5, 9);
+          ctx.fillStyle = '#3d2614';
+          ctx.fillRect(px + 11, py + 9, 2, 9);
+          const radGrad = ctx.createRadialGradient(px + 9, py + 6, 2, px + 10, py + 7, 10);
+          radGrad.addColorStop(0, '#5bb849');
+          radGrad.addColorStop(0.65, '#2d7a22');
+          radGrad.addColorStop(1, '#1b5014');
+          ctx.fillStyle = radGrad;
+          ctx.beginPath();
+          ctx.arc(px + 10, py + 7, 9, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#7de866';
+          ctx.fillRect(px + 7, py + 3, 3, 2);
+          ctx.fillRect(px + 11, py + 5, 2, 2);
+          break;
+        }
+
+        case TILE.HOUSE_ROOF: {
+          const roofGrad = ctx.createLinearGradient(px, py, px, py + TILE_SIZE);
+          roofGrad.addColorStop(0, '#e06847');
+          roofGrad.addColorStop(0.85, '#ab3f24');
+          roofGrad.addColorStop(1, '#691e0d');
+          ctx.fillStyle = roofGrad;
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          ctx.fillStyle = 'rgba(0,0,0,0.22)';
+          ctx.fillRect(px, py + 5, TILE_SIZE, 1.5);
+          ctx.fillRect(px, py + 11, TILE_SIZE, 1.5);
+          ctx.fillRect(px, py + 17, TILE_SIZE, 1.5);
+          ctx.fillStyle = 'rgba(255,255,255,0.3)';
+          ctx.fillRect(px, py, TILE_SIZE, 1);
+          break;
+        }
+
+        case TILE.HOUSE_WALL: {
+          ctx.fillStyle = '#f1e7d0';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          const shadeGrad = ctx.createLinearGradient(px, py, px, py + 6);
+          shadeGrad.addColorStop(0, 'rgba(0,0,0,0.35)');
+          shadeGrad.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = shadeGrad;
+          ctx.fillRect(px, py, TILE_SIZE, 6);
+          ctx.fillStyle = '#d4c7a9';
+          ctx.fillRect(px, py + 9, TILE_SIZE, 1);
+          ctx.fillRect(px, py + 16, TILE_SIZE, 1);
+          ctx.fillStyle = '#5c4033';
+          ctx.fillRect(px + 7, py + 7, 7, 7);
+          ctx.fillStyle = '#7dd3fc';
+          ctx.fillRect(px + 8, py + 8, 5, 5);
+          ctx.fillStyle = 'rgba(255,255,255,0.85)';
+          ctx.fillRect(px + 9, py + 9, 2, 2);
+          ctx.fillStyle = '#cbd5e1';
+          ctx.fillRect(px + 6, py + 14, 9, 1.5);
+          break;
+        }
+
+        case TILE.MARKET_DOOR: {
+          ctx.fillStyle = '#f1e7d0';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          for (let i = 0; i < 4; i++) {
+            ctx.fillStyle = (i % 2 === 0) ? '#0284c7' : '#ffffff';
+            ctx.fillRect(px + i * 5, py, 5, 6);
+          }
+          ctx.fillStyle = 'rgba(0,0,0,0.3)';
+          ctx.fillRect(px, py + 6, TILE_SIZE, 2);
+          ctx.fillStyle = '#0f172a';
+          ctx.fillRect(px + 3, py + 8, 14, 12);
+          ctx.fillStyle = '#38bdf8';
+          ctx.fillRect(px + 5, py + 10, 4, 10);
+          ctx.fillRect(px + 11, py + 10, 4, 10);
+          ctx.fillStyle = '#fbbf24';
+          ctx.fillRect(px + 8, py + 14, 1.5, 3);
+          ctx.fillRect(px + 10.5, py + 14, 1.5, 3);
+          break;
+        }
+
+        case TILE.PHARMACY_DOOR: {
+          // Porta verde com cruz medicinal acolhedora
+          ctx.fillStyle = '#f1e7d0';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          for (let i = 0; i < 4; i++) {
+            ctx.fillStyle = (i % 2 === 0) ? '#10b981' : '#ffffff';
+            ctx.fillRect(px + i * 5, py, 5, 6);
+          }
+          ctx.fillStyle = 'rgba(0,0,0,0.3)';
+          ctx.fillRect(px, py + 6, TILE_SIZE, 2);
+          ctx.fillStyle = '#064e3b';
+          ctx.fillRect(px + 3, py + 8, 14, 12);
+          ctx.fillStyle = '#a7f3d0';
+          ctx.fillRect(px + 5, py + 10, 10, 10);
+          // Cruz branca suave
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(px + 9, py + 12, 2, 6);
+          ctx.fillRect(px + 7, py + 14, 6, 2);
+          break;
+        }
+
+        case TILE.BANK_DOOR: {
+          // Porta azul e dourada com sinal do banco
+          ctx.fillStyle = '#f1e7d0';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          for (let i = 0; i < 4; i++) {
+            ctx.fillStyle = (i % 2 === 0) ? '#1e3a8a' : '#fbbf24';
+            ctx.fillRect(px + i * 5, py, 5, 6);
+          }
+          ctx.fillStyle = 'rgba(0,0,0,0.3)';
+          ctx.fillRect(px, py + 6, TILE_SIZE, 2);
+          ctx.fillStyle = '#0f172a';
+          ctx.fillRect(px + 3, py + 8, 14, 12);
+          ctx.fillStyle = '#93c5fd';
+          ctx.fillRect(px + 5, py + 10, 10, 10);
+          ctx.fillStyle = '#fbbf24';
+          ctx.fillRect(px + 8, py + 13, 4, 4);
+          break;
+        }
+
+        case TILE.LIBRARY_DOOR: {
+          ctx.fillStyle = '#f1e7d0';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          for (let i = 0; i < 4; i++) {
+            ctx.fillStyle = (i % 2 === 0) ? '#059669' : '#f8fafc';
+            ctx.fillRect(px + i * 5, py, 5, 6);
+          }
+          ctx.fillStyle = 'rgba(0,0,0,0.3)';
+          ctx.fillRect(px, py + 6, TILE_SIZE, 2);
+          ctx.fillStyle = '#451a03';
+          ctx.fillRect(px + 4, py + 8, 12, 12);
+          ctx.fillStyle = '#92400e';
+          ctx.fillRect(px + 5, py + 9, 10, 11);
+          ctx.fillStyle = '#fbbf24';
+          ctx.fillRect(px + 12, py + 14, 2, 2);
+          break;
+        }
+
+        case TILE.FOUNTAIN_EDGE: {
+          ctx.fillStyle = '#94a3b8';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          ctx.fillStyle = '#cbd5e1';
+          ctx.fillRect(px + 1, py + 1, TILE_SIZE - 2, 2);
+          ctx.fillStyle = '#475569';
+          ctx.fillRect(px + 1, py + TILE_SIZE - 2, TILE_SIZE - 2, 2);
+          break;
+        }
+
+        case TILE.WATER: {
+          const wave = Math.sin(globalTick * 0.05 + px) * 2;
+          const waterGrad = ctx.createLinearGradient(px, py, px, py + TILE_SIZE);
+          waterGrad.addColorStop(0, '#0284c7');
+          waterGrad.addColorStop(1, '#0369a1');
+          ctx.fillStyle = waterGrad;
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          ctx.fillStyle = 'rgba(255,255,255,0.25)';
+          ctx.fillRect(px + 3 + wave, py + 5, 8, 1.5);
+          ctx.fillRect(px + 9 - wave, py + 13, 6, 1.5);
+          break;
+        }
+
+        case TILE.FLOWER_PATCH: {
+          ctx.fillStyle = '#4f943f';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          const drawFlower = (fx, fy, col) => {
+            ctx.fillStyle = col;
+            ctx.beginPath();
+            ctx.arc(px + fx, py + fy, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#fef08a';
+            ctx.fillRect(px + fx - 0.5, py + fy - 0.5, 1.5, 1.5);
+          };
+          drawFlower(5, 6, '#f43f5e');
+          drawFlower(14, 7, '#fbbf24');
+          drawFlower(9, 14, '#c084fc');
+          break;
+        }
+
+        case TILE.BENCH: {
+          ctx.fillStyle = (gameState.currentScene === 'bank') ? '#e2e8f0' : '#4f943f';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          ctx.fillStyle = 'rgba(0,0,0,0.2)';
+          ctx.fillRect(px + 2, py + 14, 16, 4);
+          ctx.fillStyle = '#1e293b';
+          ctx.fillRect(px + 3, py + 8, 2, 9);
+          ctx.fillRect(px + 15, py + 8, 2, 9);
+          ctx.fillStyle = (gameState.currentScene === 'bank') ? '#3b82f6' : '#92400e';
+          ctx.fillRect(px + 2, py + 6, 16, 3);
+          ctx.fillRect(px + 2, py + 11, 16, 4);
+          break;
+        }
+
+        case TILE.LAMP_POST: {
+          ctx.fillStyle = '#4f943f';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          ctx.fillStyle = 'rgba(0,0,0,0.25)';
+          ctx.beginPath();
+          ctx.arc(px + 10, py + 17, 4, 0, Math.PI*2);
+          ctx.fill();
+          ctx.fillStyle = '#1e293b';
+          ctx.fillRect(px + 9, py + 5, 2, 13);
+          ctx.fillRect(px + 7, py + 16, 6, 2);
+          ctx.fillStyle = '#fef08a';
+          ctx.fillRect(px + 8, py + 2, 4, 4);
+          ctx.fillStyle = '#334155';
+          ctx.fillRect(px + 7, py + 1, 6, 1.5);
+          break;
+        }
+
+        case TILE.HEDGE: {
+          ctx.fillStyle = '#4f943f';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          ctx.fillStyle = 'rgba(0,0,0,0.25)';
+          ctx.fillRect(px + 2, py + 15, 16, 3);
+          ctx.fillStyle = '#166534';
+          ctx.beginPath();
+          ctx.roundRect ? ctx.roundRect(px + 2, py + 4, 16, 13, 4) : ctx.fillRect(px + 2, py + 4, 16, 13);
+          ctx.fill();
+          ctx.fillStyle = '#22c55e';
+          ctx.fillRect(px + 4, py + 6, 4, 2);
+          ctx.fillRect(px + 11, py + 7, 3, 2);
+          break;
+        }
+
+        case TILE.SIGNPOST: {
+          ctx.fillStyle = '#4f943f';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          ctx.fillStyle = 'rgba(0,0,0,0.2)';
+          ctx.fillRect(px + 6, py + 16, 8, 3);
+          ctx.fillStyle = '#78350f';
+          ctx.fillRect(px + 9, py + 6, 2, 11);
+          ctx.fillStyle = '#b45309';
+          ctx.fillRect(px + 3, py + 3, 14, 8);
+          ctx.fillStyle = '#fef3c7';
+          ctx.fillRect(px + 5, py + 5, 10, 1.5);
+          ctx.fillRect(px + 5, py + 8, 7, 1.5);
+          break;
+        }
+
+        case TILE.MARKET_FLOOR: {
+          ctx.fillStyle = '#f8fafc';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          ctx.strokeStyle = '#e2e8f0';
+          ctx.strokeRect(px + 0.5, py + 0.5, TILE_SIZE - 1, TILE_SIZE - 1);
+          ctx.fillStyle = 'rgba(255,255,255,0.7)';
+          ctx.fillRect(px + 2, py + 2, 3, 3);
+          break;
+        }
+
+        case TILE.PHARMACY_FLOOR: {
+          ctx.fillStyle = '#f0fdf4';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          ctx.strokeStyle = '#dcfce7';
+          ctx.strokeRect(px + 0.5, py + 0.5, TILE_SIZE - 1, TILE_SIZE - 1);
+          ctx.fillStyle = 'rgba(255,255,255,0.8)';
+          ctx.fillRect(px + 3, py + 3, 4, 2);
+          break;
+        }
+
+        case TILE.BANK_FLOOR: {
+          ctx.fillStyle = '#f1f5f9';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          ctx.strokeStyle = '#cbd5e1';
+          ctx.strokeRect(px + 0.5, py + 0.5, TILE_SIZE - 1, TILE_SIZE - 1);
+          ctx.fillStyle = '#e2e8f0';
+          ctx.fillRect(px + 1, py + 1, TILE_SIZE - 2, 1);
+          break;
+        }
+
+        case TILE.PHARMACY_SHELF: {
+          ctx.fillStyle = '#e2e8f0';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, 6);
+          ctx.fillRect(px + 2, py + 10, TILE_SIZE - 4, 6);
+          // Caixinhas e potinhos suaves
+          ctx.fillStyle = '#38bdf8'; ctx.fillRect(px + 4, py + 3, 3, 4);
+          ctx.fillStyle = '#4ade80'; ctx.fillRect(px + 9, py + 3, 3, 4);
+          ctx.fillStyle = '#f472b6'; ctx.fillRect(px + 13, py + 4, 3, 3);
+          ctx.fillStyle = '#fbbf24'; ctx.fillRect(px + 4, py + 11, 4, 4);
+          ctx.fillStyle = '#818cf8'; ctx.fillRect(px + 10, py + 11, 4, 4);
+          break;
+        }
+
+        case TILE.BANK_ATM: {
+          // Totem de senhas interativo
+          ctx.fillStyle = '#e2e8f0';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          ctx.fillStyle = '#1e3a8a';
+          ctx.fillRect(px + 3, py + 3, 14, 15);
+          ctx.fillStyle = '#38bdf8'; // Tela azul brilhante suave
+          ctx.fillRect(px + 5, py + 5, 10, 6);
+          ctx.fillStyle = '#fbbf24'; // Botão de retirada de senha
+          ctx.fillRect(px + 8, py + 13, 4, 3);
+          break;
+        }
+
+        case TILE.SHELF_FRUITS: {
+          ctx.fillStyle = '#6c3f1e';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          ctx.fillStyle = '#96552a';
+          ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, 7);
+          ctx.fillRect(px + 2, py + 11, TILE_SIZE - 4, 7);
+          ctx.fillStyle = '#dc2626';
+          ctx.beginPath();
+          ctx.arc(px + 5, py + 5, 2, 0, Math.PI*2);
+          ctx.arc(px + 10, py + 5, 2, 0, Math.PI*2);
+          ctx.arc(px + 15, py + 5, 2, 0, Math.PI*2);
+          ctx.fill();
+          ctx.fillStyle = '#f97316';
+          ctx.beginPath();
+          ctx.arc(px + 6, py + 14, 2, 0, Math.PI*2);
+          ctx.arc(px + 12, py + 14, 2, 0, Math.PI*2);
+          ctx.fill();
+          break;
+        }
+
+        case TILE.SHELF_BOXES: {
+          ctx.fillStyle = '#52341b';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          ctx.fillStyle = '#7a4e29';
+          ctx.fillRect(px + 1, py + 2, TILE_SIZE - 2, 6);
+          ctx.fillRect(px + 1, py + 11, TILE_SIZE - 2, 6);
+          ctx.fillStyle = '#38bdf8'; ctx.fillRect(px + 3, py + 3, 3, 4);
+          ctx.fillStyle = '#a855f7'; ctx.fillRect(px + 8, py + 3, 3, 4);
+          ctx.fillStyle = '#eab308'; ctx.fillRect(px + 13, py + 4, 4, 4);
+          break;
+        }
+
+        case TILE.MARKET_COUNTER: {
+          ctx.fillStyle = '#334155';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          ctx.fillStyle = '#64748b';
+          ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, 5);
+          ctx.fillStyle = '#0284c7';
+          ctx.fillRect(px + 4, py + 9, 7, 5);
+          ctx.fillStyle = '#38bdf8';
+          ctx.fillRect(px + 5, py + 10, 5, 3);
+          break;
+        }
+
+        case TILE.MARKET_EXIT: {
+          ctx.fillStyle = '#0284c7';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(px + 4, py + 8, TILE_SIZE - 8, 3);
+          break;
+        }
+
+        case TILE.LIB_CARPET: {
+          ctx.fillStyle = '#7f1d1d';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          ctx.strokeStyle = '#991b1b';
+          ctx.strokeRect(px + 1, py + 1, TILE_SIZE - 2, TILE_SIZE - 2);
+          break;
+        }
+
+        case TILE.LIB_BOOKSHELF: {
+          ctx.fillStyle = '#451a03';
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          ctx.fillStyle = '#78350f';
+          ctx.fillRect(px + 1, py + 2, TILE_SIZE - 2, 7);
+          ctx.fillRect(px + 1, py + 11, TILE_SIZE - 2, 7);
+          ctx.fillStyle = '#3b82f6'; ctx.fillRect(px + 3, py + 3, 2, 5);
+          ctx.fillStyle = '#ef4444'; ctx.fillRect(px + 6, py + 3, 2, 5);
+          ctx.fillStyle = '#10b981'; ctx.fillRect(px + 9, py + 3, 2, 5);
+          ctx.fillStyle = '#f59e0b'; ctx.fillRect(px + 12, py + 3, 3, 5);
+          break;
+        }
+      }
+    }
+
+    function drawDetailedCharacter(x, y, shirtColor, hairColor, facing, isPlayer, stepProg) {
+      const px = Math.round(x * TILE_SIZE);
+      const bob = stepProg > 0 ? Math.sin(stepProg * Math.PI) * 2 : 0;
+      const py = Math.round(y * TILE_SIZE) - bob;
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.28)';
+      ctx.beginPath();
+      ctx.ellipse(px + (TILE_SIZE / 2), py + TILE_SIZE - 1 + bob, 7, 3.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#1e293b';
+      const legOffset = (stepProg > 0) ? Math.sin(stepProg * Math.PI * 2) * 2 : 0;
+      ctx.fillRect(px + 6, py + 14 + legOffset, 3, 5);
+      ctx.fillRect(px + 11, py + 14 - legOffset, 3, 5);
+
+      ctx.fillStyle = '#475569';
+      ctx.fillRect(px + 5, py + 17 + legOffset, 4, 2);
+      ctx.fillRect(px + 11, py + 17 - legOffset, 4, 2);
+
+      const shirtGrad = ctx.createLinearGradient(px + 5, py + 7, px + 5, py + 14);
+      shirtGrad.addColorStop(0, shirtColor);
+      shirtGrad.addColorStop(1, '#0f172a');
+      ctx.fillStyle = shirtGrad;
+      ctx.fillRect(px + 5, py + 7, 10, 8);
+
+      ctx.fillStyle = shirtColor;
+      ctx.fillRect(px + 3, py + 8, 2, 6);
+      ctx.fillRect(px + 15, py + 8, 2, 6);
+
+      ctx.fillStyle = '#fed7aa';
+      ctx.fillRect(px + 5, py + 2, 10, 7);
+
+      ctx.fillStyle = hairColor;
+      ctx.fillRect(px + 4, py + 1, 12, 3);
+      if (facing === 'down') {
+        ctx.fillRect(px + 3, py + 2, 3, 4);
+        ctx.fillRect(px + 14, py + 2, 3, 4);
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(px + 7, py + 5, 2, 2);
+        ctx.fillRect(px + 11, py + 5, 2, 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(px + 7, py + 5, 1, 1);
+        ctx.fillRect(px + 11, py + 5, 1, 1);
+      } else if (facing === 'left') {
+        ctx.fillRect(px + 4, py + 2, 5, 4);
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(px + 5, py + 5, 2, 2);
+      } else if (facing === 'right') {
+        ctx.fillRect(px + 11, py + 2, 5, 4);
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(px + 13, py + 5, 2, 2);
+      } else {
+        ctx.fillRect(px + 4, py + 2, 12, 6);
+      }
+
+      if (isPlayer && gameState.missions.market.hasBasket) {
+        ctx.fillStyle = '#a16207';
+        ctx.fillRect(px + 1, py + 10, 4, 4);
+        if (gameState.missions.market.foundItem) {
+          ctx.fillStyle = '#ef4444';
+          ctx.fillRect(px + 2, py + 9, 2, 2);
+        }
+      }
+    }
+
+    /* ==========================================================================
+       SISTEMA DE DIÁLOGOS
+       ========================================================================== */
+    function showDialog(title, text, choices = []) {
+      gameState.inDialog = true;
+      document.getElementById('dialog-title').innerHTML = title;
+      document.getElementById('dialog-text').innerText = text;
+      const chBox = document.getElementById('dialog-choices');
+      chBox.innerHTML = '';
+      currentSpeechText = text;
+
+      if (choices.length === 0) {
+        choices.push({ icon: '✅', label: 'Continuar no meu ritmo', preview: 'Fecha a conversa e segue o passeio livre', action: closeDialog });
+      }
+
+      choices.forEach(ch => {
+        const card = document.createElement('div');
+        card.className = 'choice-card';
+        card.innerHTML = `<div class="choice-label"><span>${ch.icon || '👉'}</span><span>${ch.label}</span></div>
+                          ${ch.preview ? `<div class="choice-preview">O que acontece: ${ch.preview}</div>` : ''}`;
+        card.onclick = () => { playSoftBeep(523); ch.action(); };
+        chBox.appendChild(card);
+      });
+
+      document.getElementById('dialog-layer').style.display = 'block';
+      if (autoSpeakDialogs) speakText(text);
+    }
+
+    function closeDialog() {
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      document.getElementById('dialog-layer').style.display = 'none';
+      gameState.inDialog = false;
+      playSoftBeep(440);
+      saveGameToStorage();
+    }
+
+    document.getElementById('btn-dialog-speak').onclick = () => speakText(currentSpeechText);
+
+    /* ==========================================================================
+       MISSÃO 1: MERCADO (ENCONTRAR PRODUTOS E PAGAR)
+       ========================================================================== */
+    function startMarketStory() {
+      if (!gameState.missions.market.hasSeenRoutine && gameState.missions.market.step === 0) {
+        gameState.missions.market.hasSeenRoutine = true;
+        saveGameToStorage();
+        openVisualRoutine('market');
+      } else {
+        startMarketChoices();
+      }
+    }
+
+    function startMarketChoices() {
+      const step = gameState.missions.market.step;
+      if (step === 0) {
+        updateGuideText("Dentro do mercado: pegue uma cestinha ou observe os corredores com calma.");
+        showDialog("🛒 Entrada do Mercado", "O ambiente é calmo e organizado. Como prefere começar?", [
+          {
+            icon: "🧺", label: "Pegar uma cestinha na entrada", preview: "Aparecerá uma cesta na sua mão",
+            action: () => {
+              gameState.missions.market.hasBasket = true;
+              gameState.missions.market.step = 1;
+              updateGuideText("Caminhe até as prateleiras de frutas à esquerda.");
+              saveGameToStorage();
+              showDialog("🧺 Cestinha Pronta", "Muito bem! Vá até a prateleira de frutas à esquerda.", [
+                { icon: "🍎", label: "Ir até as frutas", action: closeDialog }
+              ]);
+            }
+          },
+          {
+            icon: "👀", label: "Observar com calma primeiro", preview: "Você conhece o local sem pressa",
+            action: () => {
+              gameState.missions.market.step = 1;
+              updateGuideText("Explore o corredor e vá até as frutas quando quiser.");
+              saveGameToStorage();
+              showDialog("🌿 Tranquilidade", "Conhecer o espaço antes traz calma. Vá quando quiser.", [
+                { icon: "🚶", label: "Começar a andar", action: closeDialog }
+              ]);
+            }
+          }
+        ]);
+      } else if (step === 1 && !gameState.missions.market.foundItem) {
+        showDialog("🍎 Escolha das Frutas", "Você está nas frutas. Como prefere escolher?", [
+          {
+            icon: "🍎", label: "Escolher maçãs sozinho com calma", preview: "Coloca a maçã na cestinha",
+            action: () => {
+              gameState.missions.market.foundItem = true;
+              gameState.missions.market.step = 2;
+              updateGuideText("Fruta na cesta! Agora caminhe até o caixa da Dona Vera.");
+              saveGameToStorage();
+              showDialog("🍎 Maçãs na Cesta", "Maçãs fresquinhas guardadas! Agora vá ao caixa da Dona Vera.", [
+                { icon: "👩‍💼", label: "Ir ao caixa", action: closeDialog }
+              ]);
+            }
+          },
+          {
+            icon: "🙋‍♂️", label: "Pedir dica ao atendente Lucas", preview: "Lucas aponta as melhores frutas com calma",
+            action: () => {
+              gameState.missions.market.foundItem = true;
+              gameState.missions.market.step = 2;
+              updateGuideText("Dica recebida! Vá até o caixa da Dona Vera.");
+              saveGameToStorage();
+              showDialog("💬 Ajuda do Lucas", "Lucas diz: 'As primeiras maçãs estão ótimas! Fique à vontade.'", [
+                { icon: "👍", label: "Obrigado! Ir ao caixa", action: closeDialog }
+              ]);
+            }
+          }
+        ]);
+      } else if (step >= 2 && !gameState.missions.market.completed) {
+        showDialog("👩‍💼 Caixa da Dona Vera", "Você chegou ao caixa com suas maçãs. Como prefere interagir para pagar?", [
+          {
+            icon: "💳",
+            label: "Pagar por aproximação (rápido e silencioso)",
+            preview: "Apenas aproxima o cartão ou celular na maquininha sem estresse",
+            action: () => finishMarketMission("Você aproximou o cartão na maquininha e o pagamento foi aprovado suavemente!")
+          },
+          {
+            icon: "🗣️",
+            label: "Cumprimentar: 'Boa tarde! Vou levar estas maçãs, por favor.'",
+            preview: "Interação verbal gentil e respeitosa",
+            action: () => finishMarketMission("Dona Vera responde com um sorriso acolhedor: 'Boa tarde! Maçãs muito bonitas. Volte sempre!'")
+          },
+          {
+            icon: "🛍️",
+            label: "Avisar: 'Trouxe minha própria sacola ecológica!'",
+            preview: "Comunicação prática e consciente sobre sustentabilidade",
+            action: () => finishMarketMission("Dona Vera elogia: 'Excelente atitude! Muito obrigado por cuidar da cidade.'")
+          },
+          {
+            icon: "📱",
+            label: "Mostrar a tela do celular com o aplicativo de pagamento",
+            preview: "Comunicação visual direta sem precisar falar alto",
+            action: () => finishMarketMission("Dona Vera posiciona o leitor e confirma: 'Prontinho! Pagamento concluído com sucesso.'")
+          }
+        ]);
+      } else {
+        showDialog("✨ Missão Concluída", "Tudo pronto no mercado! Quer treinar de novo ou passear pelo bairro?", [
+          {
+            icon: "🔄", label: "Repetir visita",
+            action: () => {
+              gameState.missions.market = { step: 0, hasBasket: false, foundItem: false, completed: false, hasSeenRoutine: true };
+              saveGameToStorage();
+              startMarketStory();
+            }
+          },
+          { icon: "🌳", label: "Passear pelo bairro", action: closeDialog }
+        ]);
+      }
+    }
+
+    function finishMarketMission(detail) {
+      gameState.missions.market.completed = true;
+      gameState.missions.market.step = 3;
+      gameState.visitedPlaces.zenPark = true;
+      updateGuideText("Missão do Mercado concluída! Que tal visitar a Farmácia, Praça ou Banco?");
+      playSoftBeep(659);
+      saveGameToStorage();
+      showDialog("🎉 Missão do Mercado Concluída!", detail + "\n\nVocê concluiu sua compra com autonomia no seu próprio ritmo!", [
+        { icon: "📋", label: "Ver Roteiro", action: () => { closeDialog(); openVisualRoutine('market'); } },
+        { icon: "🚶", label: "Continuar Explorando", action: closeDialog }
+      ]);
+    }
+
+    /* ==========================================================================
+       MISSÃO 2: FARMÁCIA (PEDIR ORIENTAÇÃO A UM ATENDENTE)
+       ========================================================================== */
+    function interactWithPharmacist() {
+      gameState.visitedPlaces.pharmacy = true;
+      const fMission = gameState.missions.pharmacy;
+
+      showDialog("👩‍⚕️ Dra. Clara (Farmacêutica)", "Olá! Seja muito bem-vindo à Farmácia Bem-Estar. Como posso te orientar hoje com tranquilidade?", [
+        {
+          icon: "🧴",
+          label: "Pedir: 'Estou procurando um protetor solar para caminhar no sol.'",
+          preview: "Dra. Clara explica a melhor opção com clareza",
+          action: () => {
+            fMission.requestedAdvice = true;
+            fMission.step = 2;
+            showDialog("👩‍⚕️ Dra. Clara", "Excelente escolha para proteger sua pele! Temos este com toque seco, sem cheiro forte e fácil de espalhar. Muito bem por cuidar da sua saúde!", [
+              {
+                icon: "✅",
+                label: "Agradecer e concluir orientação",
+                action: () => finishPharmacyMission("Você pediu orientação sobre o protetor solar com clareza e autonomia!")
+              }
+            ]);
+          }
+        },
+        {
+          icon: "📱",
+          label: "Mostrar anotação no celular: 'Preciso de curativos pequenos.'",
+          preview: "Comunicação visual / escrita sem necessidade de fala longa",
+          action: () => {
+            fMission.requestedAdvice = true;
+            fMission.step = 2;
+            showDialog("👩‍⚕️ Dra. Clara", "Dra. Clara lê com atenção e carinho: 'Perfeito! Curativos respiráveis e bem macios. Aqui estão.'", [
+              {
+                icon: "👍",
+                label: "Fazer sinal de positivo e agradecer",
+                action: () => finishPharmacyMission("Você usou comunicação alternativa no celular com total sucesso!")
+              }
+            ]);
+          }
+        },
+        {
+          icon: "🦟",
+          label: "Perguntar: 'Tem alguma pomada para picada de mosquito que não arda?'",
+          preview: "Dra. Clara indica um gel calmante suave",
+          action: () => {
+            fMission.requestedAdvice = true;
+            fMission.step = 2;
+            showDialog("👩‍⚕️ Dra. Clara", "Temos um gel de camomila bem refrescante que alivia a coceira na hora sem arder nada!", [
+              {
+                icon: "🌿",
+                label: "Muito obrigado pela gentileza!",
+                action: () => finishPharmacyMission("Você explicou o que precisava e recebeu a orientação calmante perfeita!")
+              }
+            ]);
+          }
+        }
+      ]);
+    }
+
+    function finishPharmacyMission(detail) {
+      gameState.missions.pharmacy.completed = true;
+      gameState.missions.pharmacy.step = 3;
+      updateGuideText("Missão da Farmácia concluída! Você praticou pedir auxílio com segurança.");
+      playSoftBeep(659);
+      saveGameToStorage();
+      showDialog("🎉 Missão da Farmácia Concluída!", detail + "\n\nPedir orientações a profissionais de saúde é uma habilidade valiosa para o seu dia a dia!", [
+        { icon: "📋", label: "Ver Roteiro da Farmácia", action: () => { closeDialog(); openVisualRoutine('pharmacy'); } },
+        { icon: "🚶", label: "Continuar Passeando", action: closeDialog }
+      ]);
+    }
+
+    /* ==========================================================================
+       MISSÃO 3: PRAÇA (ENCONTRAR UM LOCAL TRANQUILO)
+       ========================================================================== */
+    function practiceParkRelaxation() {
+      gameState.visitedPlaces.flowerPark = true;
+      const parkMission = gameState.missions.park;
+
+      showDialog("🌳 Praça das Flores", "Você encontrou um banco confortável de madeira ao lado das flores coloridas. Deseja fazer uma pausa tranquila?", [
+        {
+          icon: "🌸",
+          label: "Sentar no banco e respirar 3 vezes com calma",
+          preview: "Pausa suave para autorregulação sensorial",
+          action: () => {
+            parkMission.step = 2;
+            showDialog("🌸 Momento de Paz", "Inspire o ar puro... 1... 2... 3... e solte devagar... Os passarinhos cantam suavemente nas árvores.", [
+              {
+                icon: "✨",
+                label: "Sentir a calma no corpo",
+                action: () => {
+                  parkMission.completed = true;
+                  parkMission.relaxed = true;
+                  updateGuideText("Missão da Praça concluída! Seu corpo e mente estão regulados.");
+                  playSoftBeep(659);
+                  saveGameToStorage();
+                  showDialog("🎉 Missão da Praça Concluída!", "Você encontrou um cantinho tranquilo e praticou sua autorregulação no seu ritmo!", [
+                    { icon: "📋", label: "Ver Roteiro da Praça", action: () => { closeDialog(); openVisualRoutine('park'); } },
+                    { icon: "🚶", label: "Levantar e continuar", action: closeDialog }
+                  ]);
+                }
+              }
+            ]);
+          }
+        },
+        {
+          icon: "👴",
+          label: "Conversar com o Sr. Bento primeiro",
+          preview: "Bate-papo acolhedor com o morador da praça",
+          action: () => interactWithSrBento()
+        }
+      ]);
+    }
+
+    /* ==========================================================================
+       MISSÃO 4: BANCO (APRENDER SEQUÊNCIA DE ATENDIMENTO SIMULADO)
+       ========================================================================== */
+    function interactWithBankATM() {
+      const bMission = gameState.missions.bank;
+      playSoftBeep(523);
+
+      if (bMission.step === 0 || !bMission.ticketNumber) {
+        showDialog("🎟️ Totem de Senhas do Banco", "Bem-vindo ao Banco Cidadão. Por favor, selecione qual tipo de senha prefere retirar:", [
+          {
+            icon: "♿",
+            label: "Retirar Senha Prioritária / Autismo (Tranquila e acolhedora)",
+            preview: "Retira a senha P-04 com atendimento calmo",
+            action: () => {
+              bMission.ticketNumber = "P-04";
+              bMission.step = 1;
+              updateGuideText("Senha P-04 retirada! Agora sente-se na poltrona para aguardar.");
+              saveGameToStorage();
+              showDialog("🎟️ Senha Retirada", "Você retirou a senha P-04 com sucesso! Agora sente-se nas poltronas de espera azuis para aguardar ser chamado.", [
+                { icon: "🪑", label: "Ir até as poltronas", action: closeDialog }
+              ]);
+            }
+          },
+          {
+            icon: "📋",
+            label: "Retirar Senha Convencional",
+            preview: "Retira a senha C-12",
+            action: () => {
+              bMission.ticketNumber = "C-12";
+              bMission.step = 1;
+              updateGuideText("Senha C-12 retirada! Sente-se na poltrona para aguardar com calma.");
+              saveGameToStorage();
+              showDialog("🎟️ Senha Retirada", "Você retirou a senha C-12 com sucesso! Sente-se na poltrona para esperar sua vez sem pressa.", [
+                { icon: "🪑", label: "Ir até as poltronas", action: closeDialog }
+              ]);
+            }
+          }
+        ]);
+      } else {
+        showDialog("🎟️ Totem de Senhas", `Você já está com a senha ${bMission.ticketNumber} em mãos. Pode sentar para esperar ou falar com o Roberto no balcão.`);
+      }
+    }
+
+    function interactWithBanker() {
+      const bMission = gameState.missions.bank;
+
+      if (!bMission.ticketNumber) {
+        showDialog("👨‍💼 Roberto (Bancário)", "Olá! Seja bem-vindo ao Banco Cidadão. Para mantermos tudo organizado e tranquilo, retire primeiro uma senha no totem azul ali na entrada!", [
+          { icon: "🎟️", label: "Ir ao totem de senhas", action: closeDialog }
+        ]);
+        return;
+      }
+
+      showDialog("👨‍💼 Roberto (Bancário)", `Olá! Senha ${bMission.ticketNumber}, correto? Seja bem-vindo ao atendimento. Como posso te ajudar na simulação de hoje?`, [
+        {
+          icon: "🪙",
+          label: "Simular: 'Gostaria de fazer um depósito simples na minha conta.'",
+          preview: "Roberto explica o comprovante com calma e gentileza",
+          action: () => finishBankMission("Depósito simulado com sucesso! Roberto entrega o comprovante e explica cada linha.")
+        },
+        {
+          icon: "📄",
+          label: "Simular: 'Gostaria de tirar uma dúvida sobre como usar meu cartão.'",
+          preview: "Roberto demonstra no aparelho de teste sem complicações",
+          action: () => finishBankMission("Roberto ensina como inserir o cartão e digitar a senha com proteção e segurança.")
+        },
+        {
+          icon: "👍",
+          label: "Apenas confirmar: 'Vim aprender o passo a passo de vir ao banco!'",
+          preview: "Treino de autonomia social e previsibilidade",
+          action: () => finishBankMission("Roberto parabeniza: 'Você seguiu perfeitamente cada etapa: senha, espera e guichê!'")
+        }
+      ]);
+    }
+
+    function finishBankMission(detail) {
+      gameState.missions.bank.completed = true;
+      gameState.missions.bank.step = 3;
+      updateGuideText("Missão do Banco concluída! A sequência de atendimento foi dominada.");
+      playSoftBeep(659);
+      saveGameToStorage();
+      showDialog("🎉 Missão do Banco Concluída!", detail + "\n\nVocê aprendeu a previsibilidade completa de um atendimento bancário!", [
+        { icon: "📋", label: "Ver Roteiro do Banco", action: () => { closeDialog(); openVisualRoutine('bank'); } },
+        { icon: "🚶", label: "Concluir e passear", action: closeDialog }
+      ]);
+    }
+
+    /* ==========================================================================
+       INTERAÇÕES COM OS OUTROS PERSONAGENS (ALEX, BENTO, SOFIA, LUCAS)
+       ========================================================================== */
+    function interactWithAlex() {
+      gameState.visitedPlaces.fountain = true;
+      saveGameToStorage();
+
+      showDialog("🧑 Alex (Vizinho)", "Olá, que bom te ver perto do chafariz! Como posso ajudar você hoje?", [
+        {
+          icon: "🗺️",
+          label: "Perguntar: 'Quais lugares posso visitar no bairro?'",
+          preview: "Alex explica o que tem para fazer perto daqui",
+          action: () => {
+            showDialog("🧑 Alex (Vizinho)", "Você pode praticar compras no Mercado, pedir auxílio na Farmácia, relaxar nos bancos da Praça ou aprender o atendimento do Banco!", [
+              { icon: "💡", label: "Entendi, vou explorar no meu ritmo!", action: closeDialog }
+            ]);
+          }
+        },
+        {
+          icon: "🤫",
+          label: "Perguntar: 'Onde tem um cantinho bem silencioso?'",
+          preview: "Alex indica o melhor lugar para descansar os sentidos",
+          action: () => {
+            showDialog("🧑 Alex (Vizinho)", "A Biblioteca à direita é super silenciosa! Você também pode subir até o banco da praça ou usar o botão 'Pausa' no menu.", [
+              { icon: "🌸", label: "Muito obrigado pela dica calma!", action: closeDialog }
+            ]);
+          }
+        },
+        {
+          icon: "👋",
+          label: "Apenas acenar com a mão amigavelmente",
+          preview: "Comunicação não-verbal rápida e sem pressão",
+          action: () => {
+            showDialog("🧑 Alex (Vizinho)", "Alex sorri calorosamente e acena de volta com a mão: 'Tenha um ótimo passeio tranquilo!'", [
+              { icon: "👍", label: "Continuar caminhando", action: closeDialog }
+            ]);
+          }
+        }
+      ]);
+    }
+
+    function interactWithSrBento() {
+      gameState.visitedPlaces.flowerPark = true;
+      saveGameToStorage();
+
+      showDialog("👴 Sr. Bento (Aposentado)", "Olá, jovem! O ar aqui no alto da praça é tão fresco. Gostaria de conversar ou apenas aproveitar a vista?", [
+        {
+          icon: "🐦",
+          label: "Perguntar: 'Que passarinhos o senhor costuma ouvir aqui?'",
+          preview: "Sr. Bento compartilha sua calma observação da natureza",
+          action: () => {
+            showDialog("👴 Sr. Bento", "Hoje de manhã ouvi um bem-te-vi cantando suave nos galhos daquela árvore grande. Olhar as árvores me traz muita paz na mente.", [
+              { icon: "🌿", label: "Obrigado por compartilhar!", action: closeDialog }
+            ]);
+          }
+        },
+        {
+          icon: "🪑",
+          label: "Sentar e praticar a missão da praça",
+          preview: "Pausa guiada de autorregulação",
+          action: () => practiceParkRelaxation()
+        },
+        {
+          icon: "🌸",
+          label: "Elogiar: 'As flores ao redor estão muito bonitas!'",
+          preview: "Comentário positivo sobre o ambiente da praça",
+          action: () => {
+            showDialog("👴 Sr. Bento", "Que bom que reparou! As flores coloridas ajudam a alegrar o dia de todo mundo que passa por aqui.", [
+              { icon: "😊", label: "Continuar meu passeio", action: closeDialog }
+            ]);
+          }
+        }
+      ]);
+    }
+
+    function interactWithSofia() {
+      gameState.visitedPlaces.library = true;
+      saveGameToStorage();
+
+      showDialog("📖 Sofia (Bibliotecária)", "Boas-vindas à Biblioteca Silenciosa. Como prefere aproveitar o espaço hoje?", [
+        {
+          icon: "📚",
+          label: "Perguntar: 'Onde ficam os livros ilustrados da natureza?'",
+          preview: "Sofia indica uma leitura tranquila e visual",
+          action: () => {
+            showDialog("📖 Sofia", "Ficam na prateleira da esquerda! Você pode folhear com calma e sem pressa, no seu próprio tempo.", [
+              { icon: "👍", label: "Vou dar uma olhada, obrigado!", action: closeDialog }
+            ]);
+          }
+        },
+        {
+          icon: "🎧",
+          label: "Perguntar: 'Posso ficar aqui só aproveitando o silêncio?'",
+          preview: "Uso do espaço para regulação sensorial calma",
+          action: () => {
+            showDialog("📖 Sofia", "Sofia fala em voz baixa e acolhedora: 'Com certeza! Nosso tapete vermelho foi feito exatamente para descansar a mente dos barulhos da rua.'", [
+              { icon: "🌿", label: "Ficar relaxando no tapete", action: closeDialog }
+            ]);
+          }
+        },
+        {
+          icon: "🤫",
+          label: "Apenas fazer o sinal de silêncio e sorrir",
+          preview: "Interação sutil sem necessidade de fala verbal",
+          action: () => {
+            showDialog("📖 Sofia", "Sofia sorri gentilmente de volta e faz uma reverência amigável com a cabeça.", [
+              { icon: "✅", label: "Continuar na biblioteca", action: closeDialog }
+            ]);
+          }
+        }
+      ]);
+    }
+
+    function interactWithLucas() {
+      showDialog("🙋‍♂️ Lucas (Atendente)", "Olá! Estou organizando as prateleiras. Posso te ajudar em algo do mercado?", [
+        {
+          icon: "🍎",
+          label: "Perguntar: 'Como sei quais frutas estão prontas para levar?'",
+          preview: "Lucas explica de forma visual e simples",
+          action: () => {
+            showDialog("🙋‍♂️ Lucas", "As maçãs mais vermelhas e com a casca lisinha estão perfeitas! Você pode pegar uma com cuidado e colocar na cestinha.", [
+              {
+                icon: "🧺",
+                label: "Entendi! Vou escolher uma maçã",
+                action: () => {
+                  closeDialog();
+                  startMarketStory();
+                }
+              }
+            ]);
+          }
+        },
+        {
+          icon: "🛒",
+          label: "Perguntar: 'Onde ficam as cestinhas de compras?'",
+          preview: "Lucas aponta para a entrada do mercado",
+          action: () => {
+            showDialog("🙋‍♂️ Lucas", "Elas ficam empilhadas logo ali na entrada, perto da porta. Fique à vontade para pegar uma quando quiser!", [
+              { icon: "👍", label: "Obrigado, Lucas!", action: closeDialog }
+            ]);
+          }
+        },
+        {
+          icon: "👍",
+          label: "Fazer um sinal de positivo com a mão (está tudo bem)",
+          preview: "Comunicação não-verbal prática e tranquila",
+          action: () => {
+            showDialog("🙋‍♂️ Lucas", "Lucas responde com um sorriso e um sinal de positivo: 'Qualquer coisa é só me chamar!'", [
+              { icon: "🚶", label: "Continuar olhando os produtos", action: closeDialog }
+            ]);
+          }
+        }
+      ]);
+    }
+
+    /* ==========================================================================
+       CHECAGEM DE INTERAÇÕES E PORTAS
+       ========================================================================== */
+    function checkInteractions() {
+      if (gameState.inDialog) return;
+      const p = gameState.player;
+      let tx = Math.round(p.x), ty = Math.round(p.y);
+      if (p.facing === 'up') ty--; if (p.facing === 'down') ty++;
+      if (p.facing === 'left') tx--; if (p.facing === 'right') tx++;
+
+      // Interações com NPCs
+      for (const k in gameState.npcs) {
+        const npc = gameState.npcs[k];
+        const isHere = (gameState.currentScene === 'town' && ['guide', 'elder'].includes(npc.role)) ||
+                       (gameState.currentScene === 'market' && ['cashier', 'helper'].includes(npc.role)) ||
+                       (gameState.currentScene === 'library' && npc.role === 'library') ||
+                       (gameState.currentScene === 'pharmacy' && npc.role === 'pharmacist') ||
+                       (gameState.currentScene === 'bank' && npc.role === 'banker');
+        if (isHere && npc.x === tx && npc.y === ty) {
+          playSoftBeep(587);
+          if (npc.role === 'guide') interactWithAlex();
+          else if (npc.role === 'elder') interactWithSrBento();
+          else if (npc.role === 'helper') interactWithLucas();
+          else if (npc.role === 'cashier') startMarketStory();
+          else if (npc.role === 'library') interactWithSofia();
+          else if (npc.role === 'pharmacist') interactWithPharmacist();
+          else if (npc.role === 'banker') interactWithBanker();
+          return;
+        }
+      }
+
+      const map = getCurrentMap();
+      if (ty >= 0 && ty < map.length && tx >= 0 && tx < map[0].length) {
+        // Placa da Cidade
+        if (gameState.currentScene === 'town' && map[ty][tx] === TILE.SIGNPOST) {
+          playSoftBeep(523);
+          showDialog("🪧 Placa da Cidade", "⬅️ Mercado do Bairro & Banco Cidadão\n➡️ Biblioteca Silenciosa & Farmácia Bem-Estar\n⬆️ Praça das Flores e Recanto Zen\n⬇️ Chafariz Central\n\n(Dica: toque no botão 🗺️ Mapa no topo a qualquer hora!)");
+          return;
+        }
+
+        // Banco de sentar na praça
+        if (gameState.currentScene === 'town' && map[ty][tx] === TILE.BENCH) {
+          practiceParkRelaxation();
+          return;
+        }
+
+        // Totem de senhas no Banco
+        if (gameState.currentScene === 'bank' && map[ty][tx] === TILE.BANK_ATM) {
+          interactWithBankATM();
+          return;
+        }
+
+        // Prateleiras do Mercado
+        if (gameState.currentScene === 'market' && [TILE.SHELF_FRUITS, TILE.SHELF_BOXES].includes(map[ty][tx])) {
+          startMarketStory();
+          return;
+        }
+
+        // Prateleiras da Farmácia
+        if (gameState.currentScene === 'pharmacy' && map[ty][tx] === TILE.PHARMACY_SHELF) {
+          showDialog("💊 Prateleira da Farmácia", "Produtos organizados: protetores solares, curativos adesivos e cremes suaves. Fale com a Dra. Clara no balcão!");
+          return;
+        }
+      }
+
+      showDialog("💡 Orientação", "Aproxime-se de portas, placas, balcões ou vizinhos e aperte Espaço ou Enter para conversar ou entrar.");
+    }
+
+    function checkDoors(tx, ty) {
+      if (gameState.currentScene === 'town') {
+        const tile = mapTown[ty][tx];
+        if (tile === TILE.MARKET_DOOR) {
+          playSoftBeep(523);
+          gameState.lastSpawn = { x: tx, y: ty + 1 };
+          gameState.currentScene = 'market';
+          gameState.visitedPlaces.market = true;
+          gameState.player.x = 6; gameState.player.y = 8;
+          gameState.player.targetX = 6; gameState.player.targetY = 8;
+          updateGuideText("Você está no Mercado! Dê alguns passos para explorar.");
+          saveGameToStorage();
+          setTimeout(() => startMarketStory(), 300);
+        } else if (tile === TILE.PHARMACY_DOOR) {
+          playSoftBeep(523);
+          gameState.lastSpawn = { x: tx, y: ty + 1 };
+          gameState.currentScene = 'pharmacy';
+          gameState.visitedPlaces.pharmacy = true;
+          gameState.player.x = 5; gameState.player.y = 4;
+          gameState.player.targetX = 5; gameState.player.targetY = 4;
+          updateGuideText("Você está na Farmácia Bem-Estar! Vá até o balcão falar com a Dra. Clara.");
+          saveGameToStorage();
+          showDialog("💊 Farmácia Bem-Estar", "Ambiente agradável e limpo. Aproxime-se do balcão para pedir orientações com calma!");
+        } else if (tile === TILE.BANK_DOOR) {
+          playSoftBeep(523);
+          gameState.lastSpawn = { x: tx, y: ty + 1 };
+          gameState.currentScene = 'bank';
+          gameState.visitedPlaces.bank = true;
+          gameState.player.x = 5; gameState.player.y = 4;
+          gameState.player.targetX = 5; gameState.player.targetY = 4;
+          updateGuideText("Você está no Banco Cidadão! Retire uma senha no totem azul à esquerda.");
+          saveGameToStorage();
+          showDialog("🏦 Banco Cidadão", "Primeiro passo: aproxime-se do totem azul à esquerda para retirar sua senha de atendimento!");
+        } else if (tile === TILE.LIBRARY_DOOR) {
+          playSoftBeep(523);
+          gameState.lastSpawn = { x: tx, y: ty + 1 };
+          gameState.currentScene = 'library';
+          gameState.visitedPlaces.library = true;
+          gameState.player.x = 5; gameState.player.y = 6;
+          gameState.player.targetX = 5; gameState.player.targetY = 6;
+          updateGuideText("Você está na Biblioteca Silenciosa.");
+          saveGameToStorage();
+          showDialog("📖 Biblioteca", "Ambiente tranquilo e sem barulho. Converse com a bibliotecária Sofia!");
+        }
+      } else {
+        const map = getCurrentMap();
+        if (map[ty][tx] === TILE.MARKET_EXIT) {
+          playSoftBeep(440);
+          gameState.currentScene = 'town';
+          gameState.player.x = gameState.lastSpawn.x; gameState.player.y = gameState.lastSpawn.y;
+          gameState.player.targetX = gameState.lastSpawn.x; gameState.player.targetY = gameState.lastSpawn.y;
+          updateGuideText("De volta à cidade! Explore as missões no Mapa a qualquer momento.");
+          saveGameToStorage();
+        }
+      }
+    }
+
+    function getCurrentMap() {
+      if (gameState.currentScene === 'market') return mapMarket;
+      if (gameState.currentScene === 'library') return mapLibrary;
+      if (gameState.currentScene === 'pharmacy') return mapPharmacy;
+      if (gameState.currentScene === 'bank') return mapBank;
+      return mapTown;
+    }
+
+    function isSolid(x, y) {
+      const map = getCurrentMap();
+      if (y < 0 || y >= map.length || x < 0 || x >= map[0].length) return true;
+      const tile = map[y][x];
+      if ([TILE.HOUSE_WALL, TILE.HOUSE_ROOF, TILE.TREE, TILE.WATER, TILE.FOUNTAIN_EDGE,
+           TILE.SHELF_FRUITS, TILE.SHELF_BOXES, TILE.MARKET_COUNTER, TILE.LIB_BOOKSHELF,
+           TILE.BENCH, TILE.LAMP_POST, TILE.HEDGE, TILE.SIGNPOST,
+           TILE.PHARMACY_SHELF, TILE.BANK_ATM].includes(tile)) return true;
+
+      for (const k in gameState.npcs) {
+        const npc = gameState.npcs[k];
+        const isHere = (gameState.currentScene === 'town' && ['guide', 'elder'].includes(npc.role)) ||
+                       (gameState.currentScene === 'market' && ['cashier', 'helper'].includes(npc.role)) ||
+                       (gameState.currentScene === 'library' && npc.role === 'library') ||
+                       (gameState.currentScene === 'pharmacy' && npc.role === 'pharmacist') ||
+                       (gameState.currentScene === 'bank' && npc.role === 'banker');
+        if (isHere && npc.x === x && npc.y === y) return true;
+      }
+      return false;
+    }
+
+    const keys = { up: false, down: false, left: false, right: false };
+
+    function movePlayer(dir) {
+      if (gameState.inDialog) return;
+      const p = gameState.player;
+      if (p.isMoving) return;
+      p.facing = dir;
+      let nx = p.x, ny = p.y;
+      if (dir === 'up') ny--; if (dir === 'down') ny++;
+      if (dir === 'left') nx--; if (dir === 'right') nx++;
+
+      if (!isSolid(nx, ny)) {
+        p.targetX = nx; p.targetY = ny; p.isMoving = true; p.stepProgress = 0;
+        playSoftBeep(330);
+      }
+    }
+
+    function update() {
+      globalTick++;
+      const p = gameState.player;
+
+      if (gameState.currentScene === 'town') {
+        if (p.y <= 5 && !gameState.visitedPlaces.flowerPark) {
+          gameState.visitedPlaces.flowerPark = true;
+          saveGameToStorage();
+        }
+        if (p.y >= 13 && p.y <= 17 && p.x >= 9 && p.x <= 13 && !gameState.visitedPlaces.fountain) {
+          gameState.visitedPlaces.fountain = true;
+          saveGameToStorage();
+        }
+      }
+
+      if (p.isMoving) {
+        p.stepProgress += p.speed;
+        if (p.stepProgress >= 1) {
+          p.x = p.targetX; p.y = p.targetY; p.isMoving = false; p.stepProgress = 0;
+          checkDoors(p.x, p.y);
+          saveGameToStorage(false);
+        } else {
+          if (p.targetX > p.x) p.x += p.speed; if (p.targetX < p.x) p.x -= p.speed;
+          if (p.targetY > p.y) p.y += p.speed; if (p.targetY < p.y) p.y -= p.speed;
+        }
+      } else if (!gameState.inDialog) {
+        if (keys.up) movePlayer('up');
+        else if (keys.down) movePlayer('down');
+        else if (keys.left) movePlayer('left');
+        else if (keys.right) movePlayer('right');
+      }
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      const map = getCurrentMap();
+      const p = gameState.player;
+
+      const mapWidth = map[0].length * TILE_SIZE;
+      const mapHeight = map.length * TILE_SIZE;
+
+      let camX = Math.round(p.x * TILE_SIZE - CANVAS_WIDTH / 2 + TILE_SIZE / 2);
+      let camY = Math.round(p.y * TILE_SIZE - CANVAS_HEIGHT / 2 + TILE_SIZE / 2);
+      camX = Math.max(0, Math.min(Math.max(0, mapWidth - CANVAS_WIDTH), camX));
+      camY = Math.max(0, Math.min(Math.max(0, mapHeight - CANVAS_HEIGHT), camY));
+
+      ctx.save();
+      ctx.translate(-camX, -camY);
+
+      for (let y = 0; y < map.length; y++) {
+        for (let x = 0; x < map[0].length; x++) {
+          drawExactTile(map[y][x], x, y);
+        }
+      }
+
+      for (const k in gameState.npcs) {
+        const npc = gameState.npcs[k];
+        const isHere = (gameState.currentScene === 'town' && ['guide', 'elder'].includes(npc.role)) ||
+                       (gameState.currentScene === 'market' && ['cashier', 'helper'].includes(npc.role)) ||
+                       (gameState.currentScene === 'library' && npc.role === 'library') ||
+                       (gameState.currentScene === 'pharmacy' && npc.role === 'pharmacist') ||
+                       (gameState.currentScene === 'bank' && npc.role === 'banker');
+        if (isHere) {
+          let shirt = '#059669', hair = '#451a03';
+          if (npc.role === 'cashier') shirt = '#e11d48';
+          if (npc.role === 'helper') shirt = '#d97706';
+          if (npc.role === 'library') shirt = '#7c3aed';
+          if (npc.role === 'elder') { shirt = '#0284c7'; hair = '#e2e8f0'; }
+          if (npc.role === 'pharmacist') { shirt = '#0284c7'; hair = '#b45309'; }
+          if (npc.role === 'banker') { shirt = '#1e3a8a'; hair = '#1e293b'; }
+          drawDetailedCharacter(npc.x, npc.y, shirt, hair, 'down', false, 0);
+        }
+      }
+
+      drawDetailedCharacter(p.x, p.y, '#2563eb', '#9a3412', p.facing, true, p.stepProgress);
+      ctx.restore();
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+      ctx.fillRect(10, 10, 140, 24);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 11px sans-serif';
+      let locName = '🏙️ Cidade Conforto';
+      if (gameState.currentScene === 'market') locName = '🛒 Mercado Local';
+      if (gameState.currentScene === 'library') locName = '📖 Biblioteca Calma';
+      if (gameState.currentScene === 'pharmacy') locName = '💊 Farmácia Bem-Estar';
+      if (gameState.currentScene === 'bank') locName = '🏦 Banco Cidadão';
+      ctx.fillText(locName, 16, 26);
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    function gameLoop() { update(); render(); }
+
+    window.addEventListener('keydown', (e) => {
+      if (['ArrowUp', 'KeyW'].includes(e.code)) keys.up = true;
+      if (['ArrowDown', 'KeyS'].includes(e.code)) keys.down = true;
+      if (['ArrowLeft', 'KeyA'].includes(e.code)) keys.left = true;
+      if (['ArrowRight', 'KeyD'].includes(e.code)) keys.right = true;
+      if (['Space', 'Enter'].includes(e.code) && !gameState.inDialog) checkInteractions();
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (['ArrowUp', 'KeyW'].includes(e.code)) keys.up = false;
+      if (['ArrowDown', 'KeyS'].includes(e.code)) keys.down = false;
+      if (['ArrowLeft', 'KeyA'].includes(e.code)) keys.left = false;
+      if (['ArrowRight', 'KeyD'].includes(e.code)) keys.right = false;
+    });
+
+    function bindTouch(id, dir) {
+      const el = document.getElementById(id);
+      const s = (e) => { e.preventDefault(); keys[dir] = true; };
+      const end = (e) => { e.preventDefault(); keys[dir] = false; };
+      el.addEventListener('mousedown', s); el.addEventListener('mouseup', end);
+      el.addEventListener('touchstart', s, { passive: false }); el.addEventListener('touchend', end, { passive: false });
+    }
+    bindTouch('d-up', 'up'); bindTouch('d-down', 'down'); bindTouch('d-left', 'left'); bindTouch('d-right', 'right');
+    document.getElementById('btn-interact').addEventListener('click', () => { if (!gameState.inDialog) checkInteractions(); });
+
+    document.getElementById('btn-fullscreen').onclick = () => {
+      const container = document.getElementById('game-container');
+      if (!document.fullscreenElement) {
+        if (container.requestFullscreen) container.requestFullscreen();
+        else if (container.webkitRequestFullscreen) container.webkitRequestFullscreen();
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    };
+
+    document.getElementById('btn-open-settings').onclick = () => document.getElementById('accessibility-modal').style.display = 'flex';
+    document.getElementById('btn-close-settings').onclick = () => {
+      document.getElementById('accessibility-modal').style.display = 'none';
+      saveGameToStorage();
+    };
+    document.getElementById('btn-sensory-break').onclick = () => document.getElementById('sensory-modal').style.display = 'flex';
+    document.getElementById('btn-close-sensory').onclick = () => document.getElementById('sensory-modal').style.display = 'none';
+
+    document.getElementById('select-theme').onchange = (e) => {
+      document.body.className = e.target.value;
+      saveGameToStorage();
+    };
+    document.getElementById('select-font-size').onchange = (e) => {
+      document.body.classList.toggle('font-large', e.target.value === 'large');
+      saveGameToStorage();
+    };
+    document.getElementById('chk-auto-tts').onchange = (e) => {
+      autoSpeakDialogs = e.target.checked;
+      saveGameToStorage();
+    };
+    document.getElementById('chk-sound').onchange = (e) => {
+      soundEnabled = e.target.checked;
+      backgroundMusic.muted = !soundEnabled;
+      if (soundEnabled) startBackgroundMusic();
+      document.getElementById('btn-sound-toggle').innerText = soundEnabled ? '🔊 Som' : '🔇 Silêncio';
+      saveGameToStorage();
+    };
+    document.getElementById('btn-sound-toggle').onclick = () => {
+      soundEnabled = !soundEnabled;
+      backgroundMusic.muted = !soundEnabled;
+      if (soundEnabled) startBackgroundMusic();
+      document.getElementById('chk-sound').checked = soundEnabled;
+      document.getElementById('btn-sound-toggle').innerText = soundEnabled ? '🔊 Som' : '🔇 Silêncio';
+      saveGameToStorage();
+    };
+
+    loadGameFromStorage();
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>
